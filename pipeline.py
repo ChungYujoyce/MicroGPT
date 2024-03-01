@@ -1,5 +1,6 @@
 import os, logging
 import click
+import shutil
 import torch
 from pathlib import Path
 from pdf_prep import pdf_prep
@@ -48,21 +49,35 @@ from constants import (
     ),
     help="Device to run on. (Default is cuda)",
 )
+@click.command()
+@click.option(
+    "--update",
+    default=0,
+    help="update the database",
+)
             
 
-def main(device_type):
+def main(device_type, update):
     
-    Path(PARSED_DIRECTORY).mkdir(parents=True, exist_ok=True)
+    if update:
+        ROOT = os.path.dirname(os.path.realpath(__file__))
+        parse_dir = f"{ROOT}/SOURCE_TMP"
+        source_dir = f"{ROOT}/PARSED_TMP"
+    else:
+        parse_dir = PARSED_DIRECTORY
+        source_dir = SOURCE_DIRECTORY
+        
+    Path(parse_dir).mkdir(parents=True, exist_ok=True)
 
     doc_list = []
-    for root, _, files in os.walk(SOURCE_DIRECTORY):
+    for root, _, files in os.walk(source_dir):
         for file in files:
             file_name = os.path.splitext(file)[0]
             source_file_path = os.path.join(root, file)
 
-            table_dict, text_dict = pdf_prep(PARSED_DIRECTORY, file_name, source_file_path)
+            table_dict, text_dict = pdf_prep(parse_dir, file_name, source_file_path)
 
-            paragraph_path = f'{PARSED_DIRECTORY}/{file_name}/paragraphs'
+            paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
             Path(paragraph_path).mkdir(parents=True, exist_ok=True)
             doc_list += text_to_chunk(table_dict, text_dict, paragraph_path)
             
@@ -80,9 +95,17 @@ def main(device_type):
     
     with open(f'{PERSIST_DIRECTORY}/mapping.json', 'w') as f:
         json.dump({source:_id  for _id, source in zip(doc_ids, doc_sources)}, f, indent=4)
-    import pdb
-    pdb.set_trace()
-    print(db._collection.get(ids = doc_ids))
+
+    # move the contents in tmp folders to original one and delete after the updates
+    if update:
+        shutil.copyfile(source_dir, SOURCE_DIRECTORY)
+        shutil.copyfile(parse_dir, PARSED_DIRECTORY)
+        try:
+            shutil.rmtree(parse_dir)
+            shutil.rmtree(source_dir)
+        except OSError as e:
+            print(f"Error: {e.filename} - {e.strerror}.")
+        
     
 if __name__ == "__main__":
     logging.basicConfig(

@@ -54,7 +54,6 @@ def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
             f.write(final_chunks[i])
         
         # transform txt chunks into langchain Document type
-        file_name = dis_dir.split('/')[-2]
         doc = Document(page_content=final_chunks[i], metadata={"source": f'{dis_dir}/chunk_{i+1}.txt'})
         docs.append(doc)
 

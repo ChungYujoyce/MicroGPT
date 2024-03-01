@@ -45,6 +45,7 @@ def img_to_table(image_paths, dis_dir):
 
     return table_dict
 
+
 def text_filter(text):
     # take off copyright line
     idx = re.search(r"©", text).span()[0]

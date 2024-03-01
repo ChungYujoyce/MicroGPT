@@ -35,7 +35,10 @@ def home_page():
                 response = requests.get(delete_source_url)
 
             save_document_url = f"{API_HOST}/save_document"
-            run_ingest_url = f"{API_HOST}/run_ingest"  # URL of the /api/run_ingest endpoint
+            if request.form.get("action") == "add":
+                run_ingest_url = f"{API_HOST}/run_update"
+            else:
+                run_ingest_url = f"{API_HOST}/run_ingest"  # URL of the /api/run_ingest endpoint
             files = request.files.getlist("documents")
             for file in files:
                 print(file.filename)

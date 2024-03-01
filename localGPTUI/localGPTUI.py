@@ -35,10 +35,6 @@ def home_page():
                 response = requests.get(delete_source_url)
 
             save_document_url = f"{API_HOST}/save_document"
-            if request.form.get("action") == "add":
-                run_ingest_url = f"{API_HOST}/run_update"
-            else:
-                run_ingest_url = f"{API_HOST}/run_ingest"  # URL of the /api/run_ingest endpoint
             files = request.files.getlist("documents")
             for file in files:
                 print(file.filename)
@@ -47,10 +43,15 @@ def home_page():
                     f.write(file.read())
                     f.seek(0)
                     response = requests.post(save_document_url, files={"document": (filename, f)})
-                    print(response.status_code)  # print HTTP response status code for debugging
+                    print(response)  # print HTTP response status code for debugging
+                    
+            if request.form.get("action") == "add":
+                run_ingest_url = f"{API_HOST}/run_add"
+            else:
+                run_ingest_url = f"{API_HOST}/run_reset"  # URL of the /api/run_ingest endpoint
             # Make a GET request to the /api/run_ingest endpoint
             response = requests.get(run_ingest_url)
-            print(response.status_code)  # print HTTP response status code for debugging
+            print(response)  # print HTTP response status code for debugging
 
     # Display the form for GET request
     return render_template(

@@ -105,27 +105,24 @@ def save_document_route():
         return "No selected file", 400
     if file:
         filename = secure_filename(file.filename)
-        folder_path = "SOURCE_DOCUMENTS"
+        folder_path = "SOURCE_TMP"
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
+            
         file_path = os.path.join(folder_path, filename)
-        exist = False
-        # if os.path.isfile(file_path):
-        #     exist = True
-        #     print("File already exists. Do you want to replace it?")
-        #     return exist
-        # else:
+
         file.save(file_path)
         return "File saved successfully", 200
 
-@app.route("/api/run_update", methods=["GET"])
-def run_update_ingest():
+@app.route("/api/run_add", methods=["GET"])
+def run_add():
+    global DB
+    global RETRIEVER
+    global QA
+    
     try:
-        if os.path.exists(PERSIST_DIRECTORY):
-            pass
-        else:
-            print("The directory does not exist")
-            run_langest_commands = ["python", "pipeline.py", "--update"]
+        run_langest_commands = ["python", "pipeline.py", "--source_dir", "SOURCE_TMP", "--parse_dir", "PARSED_TMP"]
+            
         if DEVICE_TYPE == "cpu":
             run_langest_commands.append("--device_type")
             run_langest_commands.append(DEVICE_TYPE)
@@ -134,15 +131,23 @@ def run_update_ingest():
         if result.returncode != 0:
             return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
         
+        shutil.copytree("SOURCE_TMP", "SOURCE_DOCUMENTS", dirs_exist_ok=True)
+        shutil.copytree("PARSED_TMP", "PARSED_DOCUMENTS", dirs_exist_ok=True)
+        shutil.rmtree("SOURCE_TMP")
+        shutil.rmtree("PARSED_TMP")
+        
         # load the vectorstore
         DB = Chroma(
             persist_directory=PERSIST_DIRECTORY,
             embedding_function=EMBEDDINGS,
             client_settings=CHROMA_SETTINGS,
         )
+        logging.info('DB size:', DB._collection.count())
+        
         RETRIEVER = DB.as_retriever()
         prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
 
+        
         QA = RetrievalQA.from_chain_type(
             llm=LLM,
             chain_type="stuff",
@@ -156,22 +161,15 @@ def run_update_ingest():
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
-
-@app.route("/api/run_ingest", methods=["GET"])
-def run_ingest_route():
+@app.route("/api/run_reset", methods=["GET"])
+def run_reset():
     global DB
     global RETRIEVER
     global QA
     try:
-        if os.path.exists(PERSIST_DIRECTORY):
-            try:
-                shutil.rmtree(PERSIST_DIRECTORY)
-            except OSError as e:
-                print(f"Error: {e.filename} - {e.strerror}.")
-        else:
-            print("The directory does not exist")
-
-        run_langest_commands = ["python", "pipeline.py"]
+        result = subprocess.run(["python", "db_management.py", "--delete_db"], capture_output=True)
+        
+        run_langest_commands = ["python", "pipeline.py", "--source_dir", "SOURCE_TMP", "--parse_dir", "PARSED_TMP"]
         if DEVICE_TYPE == "cpu":
             run_langest_commands.append("--device_type")
             run_langest_commands.append(DEVICE_TYPE)
@@ -179,12 +177,20 @@ def run_ingest_route():
         result = subprocess.run(run_langest_commands, capture_output=True)
         if result.returncode != 0:
             return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+        
+        shutil.rmtree("SOURCE_DOCUMENTS")
+        shutil.rmtree("PARSED_DOCUMENTS")
+        shutil.move("SOURCE_TMP", "SOURCE_DOCUMENTS")
+        shutil.move("PARSED_TMP", "PARSED_DOCUMENTS")
+        
         # load the vectorstore
         DB = Chroma(
             persist_directory=PERSIST_DIRECTORY,
             embedding_function=EMBEDDINGS,
             client_settings=CHROMA_SETTINGS,
         )
+        logging.info('DB size:', DB._collection.count())
+        
         RETRIEVER = DB.as_retriever()
         prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
 
@@ -201,7 +207,44 @@ def run_ingest_route():
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
+# @app.route("/api/run_update", methods=["GET"])
+# def run_update():
+#     try:
+#         if os.path.exists(PERSIST_DIRECTORY):
+#             pass
+#         else:
+#             print("The directory does not exist")
+#             run_langest_commands = ["python", "db_management.py", "-u"]
+#         if DEVICE_TYPE == "cpu":
+#             run_langest_commands.append("--device_type")
+#             run_langest_commands.append(DEVICE_TYPE)
 
+#         result = subprocess.run(run_langest_commands, capture_output=True)
+#         if result.returncode != 0:
+#             return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+        
+#         # load the vectorstore
+#         DB = Chroma(
+#             persist_directory=PERSIST_DIRECTORY,
+#             embedding_function=EMBEDDINGS,
+#             client_settings=CHROMA_SETTINGS,
+#         )
+#         RETRIEVER = DB.as_retriever()
+#         prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
+
+#         QA = RetrievalQA.from_chain_type(
+#             llm=LLM,
+#             chain_type="stuff",
+#             retriever=RETRIEVER,
+#             return_source_documents=SHOW_SOURCES,
+#             chain_type_kwargs={
+#                 "prompt": prompt,
+#             },
+#         )
+#         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
+#     except Exception as e:
+#         return f"Error occurred: {str(e)}", 500
+    
 @app.route("/api/prompt_route", methods=["GET", "POST"])
 def prompt_route():
     global QA

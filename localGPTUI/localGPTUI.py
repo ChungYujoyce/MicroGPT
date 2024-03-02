@@ -21,7 +21,7 @@ def home_page():
     if request.method == "POST":
         global original_result
         if "user_prompt" in request.form:
-            user_prompt = request.form["user_prompt"]
+            user_prompt = request.form.get("user_prompt")
             print(f"User Prompt: {user_prompt}")
 
             main_prompt_url = f"{API_HOST}/prompt_route"
@@ -49,25 +49,21 @@ def home_page():
                     
             if request.form.get("action") == "add":
                 run_ingest_url = f"{API_HOST}/run_add"
-            else:
+
+            if request.form.get("action") == "reset":
                 run_ingest_url = f"{API_HOST}/run_reset"  # URL of the /api/run_ingest endpoint
             # Make a GET request to the /api/run_ingest endpoint
-            response = requests.get(run_ingest_url)
+            response = requests.post(run_ingest_url)
             print(response)
 
-        elif "revise" in request.form:
-            ids, revise_result = request.form["ids"], request.form["revise_result"]
+        elif "editInput" in request.form:
+            id, revise_result = request.form.get("id"), request.form.get("revise_result")
+            print(f"id: {id}")
             print(f"Revised content: {revise_result}")
 
             revise_result_url = f"{API_HOST}/run_update"
-            response = requests.post(revise_result_url, data={"ids": ids, "revise_result": revise_result,
-                                                            "original_result": original_result})
-            print(response)
-            if response.status_code == 200:
-                # print(response.json())  # Print the JSON data from the response
-                return render_template("home.html", show_response_modal=True, response_dict=response.json())
-        
-
+            response = requests.put(revise_result_url, data={"id": id, "revise_result": revise_result})
+            print(response.content)
 
 
     # Display the form for GET request

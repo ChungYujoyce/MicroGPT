@@ -45,7 +45,7 @@
     }
 
     // Function to save the edited string
-    function saveEditedString(button) {
+    function saveEditedString(button, id) {
         // Get the parent <li> element
         var listItem = button.parentNode;
 
@@ -63,13 +63,27 @@
 
         // Show the <span> element and "Revise" button
         spanElement.style.display = "block";
-        var reviseButton = listItem.querySelector("button");
+        var reviseButton = listItem.querySelector(".reviseButton");
         reviseButton.style.display = "inline-block";
         
-        document.getElementById("textsInput").value = JSON.stringify(editedString);
+        // id 
+        // editedString
+        var form = document.getElementById("dataForm");
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "id";
+        input.value = id;
+        form.appendChild(input);
 
-        // Submit the form
-        document.getElementById("textForm").submit();
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "revise_result";
+        input.value = editedString;
+        form.appendChild(input);
+
+        form.submit();
+
+
     }
     
     function openFileSelection() {
@@ -478,8 +492,13 @@
       
           <!-- Input field for editing the string -->
           <div class="clearfix">
-              <textarea id="editInput" style="display: none;" wrap="soft"></textarea>
-              <button class="saveButton" onclick="saveEditedString(this)" style="display: none;">Save</button>
+              <form
+                id="dataForm"
+                action="{{ url_for('home_page') }}"
+                method="POST"
+              >
+                <textarea id="editInput" name="editInput" style="display: none;" wrap="soft"></textarea>
+              </form>
           </div>
         
               {% for item in response_dict['Sources'] %}
@@ -516,9 +535,10 @@
                     {{ item[1] }}
                     <!-- Content -->
                   </span>
-                  <button onclick="editString(this)">Revise</button>
+                  <button class="reviseButton" onclick="editString(this)">Revise</button>
                   <!-- Display save button for each string -->
-                  <button class="saveButton" onclick="saveEditedString(this)">Save</button>
+                  <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')" style="display: none;">Save</button>
+                  <!-- <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')">Save</button> -->
                 
                 </div>
               </div>

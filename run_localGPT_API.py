@@ -17,7 +17,7 @@ from prompt_template_utils import get_prompt_template
 from langchain.vectorstores import Chroma
 from werkzeug.utils import secure_filename
 
-from constants import CHROMA_SETTINGS, EMBEDDING_MODEL_NAME, PERSIST_DIRECTORY, MODEL_ID, MODEL_BASENAME
+from constants import CHROMA_SETTINGS, EMBEDDING_MODEL_NAME, PERSIST_DIRECTORY, PARSED_DIRECTORY, MODEL_ID, MODEL_BASENAME
 
 # API queue addition
 from threading import Lock
@@ -60,37 +60,23 @@ EMBEDDINGS = HuggingFaceInstructEmbeddings(model_name=EMBEDDING_MODEL_NAME, mode
 #     )
 
 # load the vectorstore
-DB = Chroma(
-    persist_directory=PERSIST_DIRECTORY,
-    embedding_function=EMBEDDINGS,
-    client_settings=CHROMA_SETTINGS,
-)
-
-RETRIEVER = DB.as_retriever()
-
 LLM = load_model(device_type=DEVICE_TYPE, model_id=MODEL_ID, model_basename=MODEL_BASENAME)
-prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
+DB = None
+RETRIEVER = None
+QA = None
 
-QA = RetrievalQA.from_chain_type(
-    llm=LLM,
-    chain_type="stuff",
-    retriever=RETRIEVER,
-    return_source_documents=SHOW_SOURCES,
-    chain_type_kwargs={
-        "prompt": prompt,
-    },
-)
 def load_DB():
     global DB
     global RETRIEVER
     global QA
+    global app
     # load the vectorstore
     DB = Chroma(
         persist_directory=PERSIST_DIRECTORY,
         embedding_function=EMBEDDINGS,
         client_settings=CHROMA_SETTINGS,
     )
-    logging.info('DB size:', DB._collection.count())
+    app.logger.info(f'DB size: {DB._collection.count()}')
 
     RETRIEVER = DB.as_retriever()
     prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
@@ -106,7 +92,8 @@ def load_DB():
     )
 
 app = Flask(__name__)
-
+app.logger.setLevel(logging.INFO) 
+load_DB()
 
 @app.route("/api/delete_source", methods=["GET"])
 def delete_source_route():
@@ -162,21 +149,51 @@ def run_add():
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
-@app.route("/api/run_delete", methods=["GET"])
+@app.route("/api/run_delete", methods=["DELETE"])
 def run_delete():
 
     try:
-        ids = request.form.get("ids")
-        result = subprocess.run(["python", "db_management.py", "--ids", ids, "--delete_text"], capture_output=True)
+        # Cheng-Ping Love you very much.
+        id = request.form.get("id")
+        result = subprocess.run(["python", "db_management.py", "--id", id, "--delete_text"], capture_output=True)
         if result.returncode != 0:
             return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
         
+        ## [TODO] should move to pipeline.py (knowledge_management) to delete local chunk.txt 
+        os.remove(id)
+
         load_DB()
         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
-@app.route("/api/run_reset", methods=["GET"])
+
+@app.route("/api/run_update", methods=["PUT"])
+def run_update():
+    try:
+        global request_lock  # Make sure to use the global lock instance
+        # original_result is a jsonify dict
+        _id, revise_result = request.form.get("id"), request.form.get("revise_result")
+        _id = os.path.join("PARSED_DOCUMENTS", _id)
+        app.logger.info(_id)
+        app.logger.info(revise_result)
+        with request_lock:
+            run_langest_commands = ["python", "db_management.py", "--id", _id, "--update_text", revise_result]
+            result = subprocess.run(run_langest_commands, capture_output=True)
+            if result.returncode != 0:
+                return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+        
+        ## [TODO] should move to pipeline.py (knowledge_management) to update local chunk.txt 
+        with open(_id, 'w') as f:
+            f.write(revise_result)
+
+        load_DB()
+        return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
+    except Exception as e:
+        return f"Error occurred: {str(e)}", 500
+    
+
+@app.route("/api/run_reset", methods=["POST"])
 def run_reset():
     try:
         result = subprocess.run(["python", "db_management.py", "--delete_db"], capture_output=True)
@@ -199,31 +216,6 @@ def run_reset():
         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
-
-@app.route("/api/run_update", methods=["GET"])
-def run_update():
-
-    try:
-        global request_lock  # Make sure to use the global lock instance
-        # original_result is a jsonify dict
-        ids, revise_result, original_result = request.form.get("ids"), request.form.get("revise_result"), request.form.get("original_result")
-        if revise_result:
-            # Acquire the lock before processing the prompt
-            with request_lock:
-                for id in ids:
-                    original_result[id] = revise_result[id]
-            
-        if revise_result:
-            run_langest_commands = ["python", "db_management.py", "--ids", ids, "--update_text", revise_result]
-            result = subprocess.run(run_langest_commands, capture_output=True)
-            if result.returncode != 0:
-                return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
-            
-        load_DB()
-        return jsonify(original_result), 200
-    except Exception as e:
-        return f"Error occurred: {str(e)}", 500
-    
     
 @app.route("/api/prompt_route", methods=["GET", "POST"])
 def prompt_route():

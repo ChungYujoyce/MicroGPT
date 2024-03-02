@@ -80,6 +80,30 @@ QA = RetrievalQA.from_chain_type(
         "prompt": prompt,
     },
 )
+def load_DB():
+    global DB
+    global RETRIEVER
+    global QA
+    # load the vectorstore
+    DB = Chroma(
+        persist_directory=PERSIST_DIRECTORY,
+        embedding_function=EMBEDDINGS,
+        client_settings=CHROMA_SETTINGS,
+    )
+    logging.info('DB size:', DB._collection.count())
+
+    RETRIEVER = DB.as_retriever()
+    prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
+
+    QA = RetrievalQA.from_chain_type(
+        llm=LLM,
+        chain_type="stuff",
+        retriever=RETRIEVER,
+        return_source_documents=SHOW_SOURCES,
+        chain_type_kwargs={
+            "prompt": prompt,
+        },
+    )
 
 app = Flask(__name__)
 
@@ -116,9 +140,6 @@ def save_document_route():
 
 @app.route("/api/run_add", methods=["GET"])
 def run_add():
-    global DB
-    global RETRIEVER
-    global QA
     
     try:
         run_langest_commands = ["python", "pipeline.py", "--source_dir", "SOURCE_TMP", "--parse_dir", "PARSED_TMP"]
@@ -136,36 +157,27 @@ def run_add():
         shutil.rmtree("SOURCE_TMP")
         shutil.rmtree("PARSED_TMP")
         
-        # load the vectorstore
-        DB = Chroma(
-            persist_directory=PERSIST_DIRECTORY,
-            embedding_function=EMBEDDINGS,
-            client_settings=CHROMA_SETTINGS,
-        )
-        logging.info('DB size:', DB._collection.count())
-        
-        RETRIEVER = DB.as_retriever()
-        prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
+        load_DB()
+        return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
+    except Exception as e:
+        return f"Error occurred: {str(e)}", 500
 
+@app.route("/api/run_delete", methods=["GET"])
+def run_delete():
+
+    try:
+        ids = request.form.get("ids")
+        result = subprocess.run(["python", "db_management.py", "--ids", ids, "--delete_text"], capture_output=True)
+        if result.returncode != 0:
+            return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
         
-        QA = RetrievalQA.from_chain_type(
-            llm=LLM,
-            chain_type="stuff",
-            retriever=RETRIEVER,
-            return_source_documents=SHOW_SOURCES,
-            chain_type_kwargs={
-                "prompt": prompt,
-            },
-        )
+        load_DB()
         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
 @app.route("/api/run_reset", methods=["GET"])
 def run_reset():
-    global DB
-    global RETRIEVER
-    global QA
     try:
         result = subprocess.run(["python", "db_management.py", "--delete_db"], capture_output=True)
         
@@ -182,68 +194,36 @@ def run_reset():
         shutil.rmtree("PARSED_DOCUMENTS")
         shutil.move("SOURCE_TMP", "SOURCE_DOCUMENTS")
         shutil.move("PARSED_TMP", "PARSED_DOCUMENTS")
-        
-        # load the vectorstore
-        DB = Chroma(
-            persist_directory=PERSIST_DIRECTORY,
-            embedding_function=EMBEDDINGS,
-            client_settings=CHROMA_SETTINGS,
-        )
-        logging.info('DB size:', DB._collection.count())
-        
-        RETRIEVER = DB.as_retriever()
-        prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
 
-        QA = RetrievalQA.from_chain_type(
-            llm=LLM,
-            chain_type="stuff",
-            retriever=RETRIEVER,
-            return_source_documents=SHOW_SOURCES,
-            chain_type_kwargs={
-                "prompt": prompt,
-            },
-        )
+        load_DB()
         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
-# @app.route("/api/run_update", methods=["GET"])
-# def run_update():
-#     try:
-#         if os.path.exists(PERSIST_DIRECTORY):
-#             pass
-#         else:
-#             print("The directory does not exist")
-#             run_langest_commands = ["python", "db_management.py", "-u"]
-#         if DEVICE_TYPE == "cpu":
-#             run_langest_commands.append("--device_type")
-#             run_langest_commands.append(DEVICE_TYPE)
+@app.route("/api/run_update", methods=["GET"])
+def run_update():
 
-#         result = subprocess.run(run_langest_commands, capture_output=True)
-#         if result.returncode != 0:
-#             return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
-        
-#         # load the vectorstore
-#         DB = Chroma(
-#             persist_directory=PERSIST_DIRECTORY,
-#             embedding_function=EMBEDDINGS,
-#             client_settings=CHROMA_SETTINGS,
-#         )
-#         RETRIEVER = DB.as_retriever()
-#         prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
-
-#         QA = RetrievalQA.from_chain_type(
-#             llm=LLM,
-#             chain_type="stuff",
-#             retriever=RETRIEVER,
-#             return_source_documents=SHOW_SOURCES,
-#             chain_type_kwargs={
-#                 "prompt": prompt,
-#             },
-#         )
-#         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
-#     except Exception as e:
-#         return f"Error occurred: {str(e)}", 500
+    try:
+        global request_lock  # Make sure to use the global lock instance
+        # original_result is a jsonify dict
+        ids, revise_result, original_result = request.form.get("ids"), request.form.get("revise_result"), request.form.get("original_result")
+        if revise_result:
+            # Acquire the lock before processing the prompt
+            with request_lock:
+                for id in ids:
+                    original_result[id] = revise_result[id]
+            
+        if revise_result:
+            run_langest_commands = ["python", "db_management.py", "--ids", ids, "--update_text", revise_result]
+            result = subprocess.run(run_langest_commands, capture_output=True)
+            if result.returncode != 0:
+                return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+            
+        load_DB()
+        return jsonify(original_result), 200
+    except Exception as e:
+        return f"Error occurred: {str(e)}", 500
+    
     
 @app.route("/api/prompt_route", methods=["GET", "POST"])
 def prompt_route():

@@ -19,19 +19,21 @@ API_HOST = "http://localhost:5110/api"
 @app.route("/", methods=["GET", "POST"])
 def home_page():
     if request.method == "POST":
+        global original_result
         if "user_prompt" in request.form:
             user_prompt = request.form["user_prompt"]
             print(f"User Prompt: {user_prompt}")
 
             main_prompt_url = f"{API_HOST}/prompt_route"
             response = requests.post(main_prompt_url, data={"user_prompt": user_prompt})
-            print(response.status_code)  # print HTTP response status code for debugging
+            original_result = response
+            print(response)
             if response.status_code == 200:
                 # print(response.json())  # Print the JSON data from the response
                 return render_template("home.html", show_response_modal=True, response_dict=response.json())
         elif "documents" in request.files:
-            delete_source_url = f"{API_HOST}/delete_source"  # URL of the /api/delete_source endpoint
             if request.form.get("action") == "reset":
+                delete_source_url = f"{API_HOST}/delete_source"  # URL of the /api/delete_source endpoint
                 response = requests.get(delete_source_url)
 
             save_document_url = f"{API_HOST}/save_document"
@@ -51,7 +53,22 @@ def home_page():
                 run_ingest_url = f"{API_HOST}/run_reset"  # URL of the /api/run_ingest endpoint
             # Make a GET request to the /api/run_ingest endpoint
             response = requests.get(run_ingest_url)
-            print(response)  # print HTTP response status code for debugging
+            print(response)
+
+        elif "revise" in request.form:
+            ids, revise_result = request.form["ids"], request.form["revise_result"]
+            print(f"Revised content: {revise_result}")
+
+            revise_result_url = f"{API_HOST}/run_update"
+            response = requests.post(revise_result_url, data={"ids": ids, "revise_result": revise_result,
+                                                            "original_result": original_result})
+            print(response)
+            if response.status_code == 200:
+                # print(response.json())  # Print the JSON data from the response
+                return render_template("home.html", show_response_modal=True, response_dict=response.json())
+        
+
+
 
     # Display the form for GET request
     return render_template(

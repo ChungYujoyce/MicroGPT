@@ -60,11 +60,17 @@ def home_page():
             id, revise_result = request.form.get("id"), request.form.get("revise_result")
             print(f"id: {id}")
             print(f"Revised content: {revise_result}")
-
             revise_result_url = f"{API_HOST}/run_update"
             response = requests.put(revise_result_url, data={"id": id, "revise_result": revise_result})
             print(response.content)
-
+            
+        elif "deleteInput" in request.form:
+            id = request.form.get("id"),
+            print(f"id: {id}")
+            revise_result_url = f"{API_HOST}/run_delete"
+            response = requests.delete(revise_result_url, data={"id": id})
+            print(response.content)
+            
 
     # Display the form for GET request
     return render_template(

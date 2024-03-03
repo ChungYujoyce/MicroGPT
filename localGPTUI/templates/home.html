@@ -46,6 +46,8 @@
 
     // Function to save the edited string
     function saveEditedString(button, id) {
+        event.preventDefault();
+
         // Get the parent <li> element
         var listItem = button.parentNode;
 
@@ -69,23 +71,75 @@
         // id 
         // editedString
         var form = document.getElementById("dataForm");
-        var input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "id";
-        input.value = id;
-        form.appendChild(input);
+        var formData = new FormData();
+        formData.append("editInput", true);
+        formData.append("id", id);
+        formData.append("revise_result", editedString);
 
-        var input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "revise_result";
-        input.value = editedString;
-        form.appendChild(input);
+        // Fetch API to submit the form data
+        fetch(form.action, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            // Handle success response if needed
+            console.log("Form submitted successfully");
+        })
+        .catch(error => {
+            // Handle error if needed
+            console.error("Error submitting form:", error.message);
+        });
+        
+        
+//         var input = document.createElement("input");
+//         input.type = "hidden";
+//         input.name = "id";
+//         input.value = id;
+//         form.appendChild(input);
 
-        form.submit();
+//         var input = document.createElement("input");
+//         input.type = "hidden";
+//         input.name = "revise_result";
+//         input.value = editedString;
+//         form.appendChild(input);
 
-
+//         form.submit();
     }
     
+    function deleteString(button, id, url) {
+        event.preventDefault();
+        
+        // Get the parent <li> element
+        var listItem = button.parentNode.parentNode;
+        listItem.parentNode.removeChild(listItem);
+        
+        // id 
+        // editedString
+        var formData = new FormData();
+        formData.append("deleteInput", true);
+        formData.append("id", id);
+        
+        // Fetch API to submit the form data
+        fetch(url, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            // Handle success response if needed
+            console.log("Form submitted successfully");
+        })
+        .catch(error => {
+            // Handle error if needed
+            console.error("Error submitting form:", error.message);
+        });
+    }
+      
     function openFileSelection() {
       const fileInput = document.getElementById("fileInput");
       fileInput.accept = ".csv, .pdf, .txt, .doc";
@@ -515,7 +569,7 @@
                     aria-expanded="true"
                     aria-controls="collapse{{ loop.index0 }}"
                   >
-                    {{ item[0] }}
+                    {{ item[1] }}
                     <!-- Source -->
                   </button>
                 </h2>
@@ -532,10 +586,11 @@
                       text-align: justify;
                       margin-left: 5%;
                       margin-right: 5%;">
-                    {{ item[1] }}
+                    {{ item[2] }}
                     <!-- Content -->
                   </span>
                   <button class="reviseButton" onclick="editString(this)">Revise</button>
+                  <button class="deleteButton" onclick="deleteString(this, '{{ item[0] }}', '{{ url_for('home_page') }}')">Delete</button>
                   <!-- Display save button for each string -->
                   <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')" style="display: none;">Save</button>
                   <!-- <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')">Save</button> -->

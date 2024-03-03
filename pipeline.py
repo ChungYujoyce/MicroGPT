@@ -10,6 +10,7 @@ from utils import get_embeddings
 import uuid
 import json
 import argparse
+import hashlib
 
 from constants import (
     CHROMA_SETTINGS,
@@ -39,9 +40,14 @@ def main(args):
             paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
             Path(paragraph_path).mkdir(parents=True, exist_ok=True)
             doc_list += text_to_chunk(table_dict, text_dict, paragraph_path)
-            
-    doc_sources = [d.metadata['source'] for d in doc_list]
-    doc_ids = [str(uuid.uuid4()) for _ in range(len(doc_sources))]
+    
+    doc_ids = []
+    doc_sources = []
+    for d in doc_list:
+        d.metadata['id'] = hashlib.sha256(d.metadata['source'].encode()).hexdigest()
+        doc_ids.append(d.metadata['id'])
+        doc_sources.append(d.metadata['source'])
+        
     embeddings = get_embeddings(args.device_type)
     logging.info(f"Loaded embeddings from {EMBEDDING_MODEL_NAME}")
     db = Chroma.from_documents(
@@ -49,11 +55,12 @@ def main(args):
         embeddings,
         persist_directory=PERSIST_DIRECTORY,
         client_settings=CHROMA_SETTINGS,
-        ids=doc_sources,
+        ids=doc_ids,
     )
     print(db._collection.count())
-    # with open(f'{PERSIST_DIRECTORY}/mapping.json', 'w') as f:
-    #     json.dump({source:_id  for _id, source in zip(doc_ids, doc_sources)}, f, indent=4)
+    
+    with open(f'{PERSIST_DIRECTORY}/mapping.json', 'w') as f:
+        json.dump({_id:source for _id, source in zip(doc_ids, doc_sources)}, f, indent=4)
 
     # move the contents in tmp folders to original one and delete after the updates
         

@@ -154,14 +154,16 @@ def run_delete():
 
     try:
         # Cheng-Ping Love you very much.
-        id = request.form.get("id")
-        result = subprocess.run(["python", "db_management.py", "--id", id, "--delete_text"], capture_output=True)
-        if result.returncode != 0:
-            return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+        global request_lock  # Make sure to use the global lock instance
+        _id = request.form.get("id")
+        # _id = os.path.join("PARSED_DOCUMENTS", _id)
+        app.logger.info(_id)
         
-        ## [TODO] should move to pipeline.py (knowledge_management) to delete local chunk.txt 
-        os.remove(id)
-
+        with request_lock:
+            result = subprocess.run(["python", "db_management.py", "--id", _id, "--delete_text"], capture_output=True)
+            if result.returncode != 0:
+                return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+            
         load_DB()
         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
     except Exception as e:
@@ -174,18 +176,15 @@ def run_update():
         global request_lock  # Make sure to use the global lock instance
         # original_result is a jsonify dict
         _id, revise_result = request.form.get("id"), request.form.get("revise_result")
-        _id = os.path.join("PARSED_DOCUMENTS", _id)
+        # _id = os.path.join("PARSED_DOCUMENTS", _id)
         app.logger.info(_id)
         app.logger.info(revise_result)
+        
         with request_lock:
             run_langest_commands = ["python", "db_management.py", "--id", _id, "--update_text", revise_result]
             result = subprocess.run(run_langest_commands, capture_output=True)
             if result.returncode != 0:
                 return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
-        
-        ## [TODO] should move to pipeline.py (knowledge_management) to update local chunk.txt 
-        with open(_id, 'w') as f:
-            f.write(revise_result)
 
         load_DB()
         return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
@@ -237,10 +236,9 @@ def prompt_route():
 
             prompt_response_dict["Sources"] = []
             for document in docs:
-                source = str(document.metadata["source"])
-                elements = source.split("/")
-                result = "/".join(elements[-3:])
-                prompt_response_dict["Sources"].append((result, str(document.page_content)))
+                _id = document.metadata["id"]
+                source = "/".join(str(document.metadata["source"]).split("/")[-3:])
+                prompt_response_dict["Sources"].append((_id, source, str(document.page_content)))
 
         return jsonify(prompt_response_dict), 200
     else:

@@ -18,6 +18,7 @@ from langchain.vectorstores import Chroma
 from werkzeug.utils import secure_filename
 
 from constants import CHROMA_SETTINGS, EMBEDDING_MODEL_NAME, PERSIST_DIRECTORY, PARSED_DIRECTORY, MODEL_ID, MODEL_BASENAME
+from db_mng import DB_Management
 
 # API queue addition
 from threading import Lock
@@ -95,7 +96,10 @@ app = Flask(__name__)
 app.logger.setLevel(logging.INFO) 
 load_DB()
 
-@app.route("/api/delete_source", methods=["GET"])
+# DB object init
+db_manager = DB_Management(f'{PERSIST_DIRECTORY}/mapping.json', PERSIST_DIRECTORY)
+
+@app.route("/api/delete_source", methods=["DELETE"])
 def delete_source_route():
     folder_name = "SOURCE_DOCUMENTS"
 
@@ -125,12 +129,12 @@ def save_document_route():
         file.save(file_path)
         return "File saved successfully", 200
 
-@app.route("/api/run_add", methods=["GET"])
+@app.route("/api/run_add", methods=["POST"])
 def run_add():
     
     try:
         run_langest_commands = ["python", "pipeline.py", "--source_dir", "SOURCE_TMP", "--parse_dir", "PARSED_TMP"]
-            
+        
         if DEVICE_TYPE == "cpu":
             run_langest_commands.append("--device_type")
             run_langest_commands.append(DEVICE_TYPE)
@@ -160,12 +164,10 @@ def run_delete():
         app.logger.info(_id)
         
         with request_lock:
-            result = subprocess.run(["python", "db_management.py", "--id", _id, "--delete_text"], capture_output=True)
-            if result.returncode != 0:
-                return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
-            
+            db_manager.delete_text(_id)
+
         load_DB()
-        return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
+        return "Script executed successfully", 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
 
@@ -176,26 +178,23 @@ def run_update():
         global request_lock  # Make sure to use the global lock instance
         # original_result is a jsonify dict
         _id, revise_result = request.form.get("id"), request.form.get("revise_result")
-        # _id = os.path.join("PARSED_DOCUMENTS", _id)
         app.logger.info(_id)
         app.logger.info(revise_result)
         
         with request_lock:
-            run_langest_commands = ["python", "db_management.py", "--id", _id, "--update_text", revise_result]
-            result = subprocess.run(run_langest_commands, capture_output=True)
-            if result.returncode != 0:
-                return "Script execution failed: {}".format(result.stderr.decode("utf-8")), 500
+            db_manager.update_text(_id, revise_result)
 
         load_DB()
-        return "Script executed successfully: {}".format(result.stdout.decode("utf-8")), 200
+        return "Script executed successfully", 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
     
 
-@app.route("/api/run_reset", methods=["POST"])
+@app.route("/api/run_reset", methods=["POST", "DELETE"])
 def run_reset():
     try:
-        result = subprocess.run(["python", "db_management.py", "--delete_db"], capture_output=True)
+        db_manager.delete_db()
+        # result = subprocess.run(["python", "db_management.py", "--delete_db"], capture_output=True)
         
         run_langest_commands = ["python", "pipeline.py", "--source_dir", "SOURCE_TMP", "--parse_dir", "PARSED_TMP"]
         if DEVICE_TYPE == "cpu":

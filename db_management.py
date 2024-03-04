@@ -7,7 +7,6 @@ from langchain.vectorstores import Chroma
 from langchain.docstore.document import Document
 from utils import get_embeddings
 
-## [TODO] should be a class here and initialize in run_localGPT_API.py
 
 def main(args):
     
@@ -16,7 +15,7 @@ def main(args):
         
     db = Chroma(embedding_function = get_embeddings(), persist_directory=PERSIST_DIRECTORY)
     vec_counts = db._collection.count()
-    # print(db._collection.get())
+    print(db._collection.get())
     
     if args.delete_db:
         shutil.rmtree(PERSIST_DIRECTORY)
@@ -56,8 +55,6 @@ def main(args):
         _id = args.id
         db._collection.add(ids= _id, documents = args.add_text)
         print(f"Successfully added {db._collection.count() - vec_counts} file!")
-        
-        
 
     with open(args.mapping_path, 'w') as f:
         json.dump(mapping, f, indent=4)
@@ -67,11 +64,11 @@ if __name__ == "__main__":
 
     # Add arguments
     parser.add_argument('--mapping_path', '-m', type=str, default=f'{PERSIST_DIRECTORY}/mapping.json', help='mapping.json path')
-    parser.add_argument('--id', type=str, help='file id or source path')
-    parser.add_argument('--delete_db', action='store_true', help='delete whole DB')
-    parser.add_argument('--delete_text', action='store_true', help='delete document in DB')
-    parser.add_argument('--add_text', type=str, help='add new chunk in DB')
-    parser.add_argument('--update_text', type=str, help='update document in DB')
+    parser.add_argument('--id', type=str, help='get the id of the instance')
+    parser.add_argument('--delete_db', action='store_true', help='delete the whole DB')
+    parser.add_argument('--delete_text', action='store_true', help='delete instance in DB')
+    parser.add_argument('--add_text', type=str, help='add new instance in DB')
+    parser.add_argument('--update_text', type=str, help='update instance in DB')
     args = parser.parse_args()
 
     # Call the main function with parsed arguments

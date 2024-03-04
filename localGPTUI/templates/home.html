@@ -29,7 +29,7 @@
 
   <body>
     <div class="container">
-      <div class="titlegpt">LocalGPT</div>
+      <div class="titlegpt">MicroGPT</div>
       <div class="search">
         <div class="row">
           <div class="col-md-12">
@@ -183,8 +183,6 @@
                   <button class="deleteButton" onclick="deleteString(this, '{{ item[0] }}', '{{ url_for('home_page') }}')">Delete</button>
                   <!-- Display save button for each string -->
                   <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')" style="display: none;">Save</button>
-                  <!-- <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')">Save</button> -->
-                
                 </div>
               </div>
               {% endfor %}
@@ -294,6 +292,27 @@
             <button type="button" class="cancel_button" data-bs-dismiss="modal">
               Cancel
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <!-- Modal header -->
+          <div class="modal-header justify-content-center">
+            <h5 class="modal-title justify-content-center" id="confirmationModalLabel">Confirmation</h5>
+          </div>
+          <!-- Modal body -->
+          <div class="modal-body text-center">
+            <p>Are you sure you want to proceed?</p>
+          </div>
+          <!-- Modal footer -->
+          <div class="modal-footer justify-content-center">
+            <button type="button" class="default_button" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="default_button" data-bs-dismiss="modal" id="confirmAction">Confirm</button>
           </div>
         </div>
       </div>

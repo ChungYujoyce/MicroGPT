@@ -50,7 +50,7 @@
       width: 100%;
       box-shadow:
         inset 0 1px 1px rgba(0, 0, 0, 0.075),
-        0 0 8px rgba(255, 0, 0, 0.6);
+        0 0 8px rgba(0, 203, 110, 0.8);
       background-color: #fff;
       padding: 4px;
       border-radius: 5px;
@@ -94,14 +94,14 @@
       top: 0px;
       border: none;
       height: 45px;
-      background-color: #ff0059;
+      background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
       width: 90px;
       border-radius: 4px;
     }
 
     .search-2 button:hover {
-      background: #ff0059;
+      background: rgba(0, 203, 110, 0.8);
       color: #ffffff;
       transition: all 0.2s ease;
       cursor: pointer;
@@ -113,7 +113,7 @@
       top: 0px;
       border: none;
       height: 45px;
-      background-color: #ff0059;
+      background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
       width: 90px;
       border-radius: 4px;
@@ -138,21 +138,60 @@
     .default_button {
       border: none;
       height: 45px;
-      background-color: #ff0059;
+      background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
       width: 90px;
       border-radius: 4px;
     }
 
-    .default_button:hover {
-      background: #ff0059;
+    .reviseButton {
+      border: none;
+      height: 45px;
+      background-color: rgba(0, 203, 110, 0.8);
+      color: #fff;
+      width: 90px;
+      border-radius: 4px;
+    }
+    .deleteButton {
+      border: none;
+      height: 45px;
+      background-color: rgba(0, 203, 110, 0.8);
+      color: #fff;
+      width: 90px;
+      border-radius: 4px;
+    }
+    .saveButton {
+      border: none;
+      height: 45px;
+      background-color: rgba(0, 203, 110, 0.8);
+      color: #fff;
+      width: 90px;
+      border-radius: 4px;
+    }
+
+    .reviseButton:hover {
+      background: rgba(0, 203, 110, 0.8);
+      color: #ffffff;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .deleteButton:hover {
+      background: rgba(0, 203, 110, 0.8);
+      color: #ffffff;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .saveButton:hover {
+      background: rgba(0, 203, 110, 0.8);
       color: #ffffff;
       transition: all 0.2s ease;
       cursor: pointer;
     }
 
     .upload_button:hover {
-      background: #ff0059;
+      background: rgba(0, 203, 110, 0.8);
       color: #ffffff;
       transition: all 0.2s ease;
       cursor: pointer;
@@ -164,14 +203,14 @@
       top: 0px;
       border: none;
       height: 45px;
-      background-color: #ff0059;
+      background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
       width: 90px;
       border-radius: 4px;
     }
 
     .tutorial_button:hover {
-      background: #ff0059;
+      background: rgba(0, 203, 110, 0.8);
       color: #ffffff;
       transition: all 0.2s ease;
       cursor: pointer;
@@ -181,7 +220,7 @@
       border-color: #bc13cf;
       box-shadow:
         inset 0 1px 1px rgba(0, 0, 0, 0.075),
-        0 0 8px rgba(255, 0, 0, 0.6);
+        0 0 8px rgba(7, 222, 189, 0.6);
     }
 
     @media (max-width: 800px) {
@@ -227,12 +266,12 @@
 
     .accordion-button:focus {
       z-index: 3;
-      border-color: #ff0059;
+      border-color: rgba(0, 203, 110, 0.8);
       box-shadow: 0 0 0 0.25rem rgba(153, 50, 168, 0.25);
     }
 
     .accordion-button:not(.collapsed) {
-      color:#ff0059;
+      color:rgba(0, 203, 110, 0.8);
       background-color: #f5b3cb;
       box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.125);
     }

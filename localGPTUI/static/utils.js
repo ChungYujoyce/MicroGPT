@@ -1,6 +1,7 @@
 // Function to enable editing of the clicked string
 function editString(button) {
-    // Get the parent <li> element
+  $('#confirmationModal').modal('show');
+  $('#confirmAction').on('click', function() {
     var listItem = button.parentNode;
 
     // Get the <span> element containing the string
@@ -20,13 +21,16 @@ function editString(button) {
     // Display the save button associated with the edited string
     var saveButton = listItem.querySelector(".saveButton");
     saveButton.style.display = "inline-block";
+
+    // Close the modal
+    $('#confirmationModal').modal('hide');
+  });
 }
 
 // Function to save the edited string
 function saveEditedString(button, id) {
     event.preventDefault();
 
-    // Get the parent <li> element
     var listItem = button.parentNode;
 
     // Get the edited string from the input field
@@ -70,52 +74,40 @@ function saveEditedString(button, id) {
         // Handle error if needed
         console.error("Error submitting form:", error.message);
     });
-
-
-//         var input = document.createElement("input");
-//         input.type = "hidden";
-//         input.name = "id";
-//         input.value = id;
-//         form.appendChild(input);
-
-//         var input = document.createElement("input");
-//         input.type = "hidden";
-//         input.name = "revise_result";
-//         input.value = editedString;
-//         form.appendChild(input);
-
-//         form.submit();
 }
 
 function deleteString(button, id, url) {
     event.preventDefault();
+    $('#confirmationModal').modal('show');
+    $('#confirmAction').on('click', function() {
+        var listItem = button.parentNode.parentNode;
+        listItem.parentNode.removeChild(listItem);
 
-    // Get the parent <li> element
-    var listItem = button.parentNode.parentNode;
-    listItem.parentNode.removeChild(listItem);
+        // id 
+        // editedString
+        var formData = new FormData();
+        formData.append("deleteInput", true);
+        formData.append("id", id);
 
-    // id 
-    // editedString
-    var formData = new FormData();
-    formData.append("deleteInput", true);
-    formData.append("id", id);
-
-    // Fetch API to submit the form data
-    fetch(url, {
-        method: "DELETE",
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok");
-        }
-        // Handle success response if needed
-        console.log("Form submitted successfully");
-    })
-    .catch(error => {
-        // Handle error if needed
-        console.error("Error submitting form:", error.message);
-    });
+        // Fetch API to submit the form data
+        fetch(url, {
+            method: "DELETE",
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            // Handle success response if needed
+            console.log("Form submitted successfully");
+        })
+        .catch(error => {
+            // Handle error if needed
+            console.error("Error submitting form:", error.message);
+        });
+    // Close the modal
+    $('#confirmationModal').modal('hide');
+  });
 }
 
 function openFileSelection() {

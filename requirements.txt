@@ -1,10 +1,12 @@
 # Natural Language Processing
+torch
+torchvision
 langchain==0.0.267
 chromadb==0.4.6
 nltk
 # InstructorEmbedding
-# sentence-transformers==2.2.2
-# faiss-cpu
+sentence-transformers==2.2.2
+faiss-cpu
 huggingface_hub
 transformers
 # autoawq; sys_platform != 'darwin'
@@ -20,6 +22,8 @@ easyocr
 urllib3==1.26.6
 pdf2image
 accelerate
+argparse
+regex
 # bitsandbytes ; sys_platform != 'win32'
 # bitsandbytes-windows ; sys_platform == 'win32'
 click

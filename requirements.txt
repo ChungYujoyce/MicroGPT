@@ -4,7 +4,7 @@ torchvision
 langchain==0.0.267
 chromadb==0.4.6
 nltk
-# InstructorEmbedding
+InstructorEmbedding
 sentence-transformers==2.2.2
 faiss-cpu
 huggingface_hub

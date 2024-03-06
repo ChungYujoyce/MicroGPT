@@ -3,13 +3,19 @@ import torch
 from PIL import Image
 from torchvision import transforms
 from transformers import TableTransformerForObjectDetection
-
+import numpy as np
+import csv
+import easyocr
+from easyocr.utils import reformat_input
+from tqdm.auto import tqdm
 
 #load model
 model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
+structure_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-structure-recognition-v1.1-all")
+structure_model.to(device)
 
 class MaxResize(object):
     def __init__(self, max_size=800):
@@ -23,7 +29,7 @@ class MaxResize(object):
 
         return resized_image
     
-def OCR(image_path):
+def OCR(image_path, bbox):
     image = Image.open(image_path).convert("RGB")
     detection_transform = transforms.Compose([
         MaxResize(800),
@@ -79,7 +85,19 @@ def OCR(image_path):
     # sort potential tables with high-enough bbox confidence score
     objects = [objects[i] for i in range(len(objects)) if objects[i]['score'] > 0.9]
     objects = sorted(objects, key=lambda item: item['bbox'][1])
-
+    
+    # Use pdfplumber bboxes with rescale
+    if len(objects) < len(bbox):
+        img_w, img_h = image.size
+        bbox = [[b[0] * img_w, b[1] * img_h, b[2] * img_w, b[3] * img_h] for b in bbox]
+        objects = []
+        for b in bbox:
+            objects.append({
+                'label': 'table', 
+                'score': 1.0,
+                'bbox': b,
+            })
+            
     # crop table
     def objects_to_crops(img, tokens, objects, class_thresholds, padding=30):
         """
@@ -132,8 +150,6 @@ def OCR(image_path):
         "no object": 10
     }
     tables_crops = objects_to_crops(image, tokens, objects, detection_class_thresholds, padding=30)
-    structure_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-structure-recognition-v1.1-all")
-    structure_model.to(device)
 
     structure_transform = transforms.Compose([
         MaxResize(1000),
@@ -175,12 +191,6 @@ def OCR(image_path):
         cell_coordinates.sort(key=lambda x: x['row'][1])
 
         return cell_coordinates
-
-    import numpy as np
-    import csv
-    import easyocr
-    from easyocr.utils import reformat_input
-    from tqdm.auto import tqdm
 
     reader = easyocr.Reader(['en']) # this needs to run only once to load the model into memory 
 

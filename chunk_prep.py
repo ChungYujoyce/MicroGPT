@@ -10,7 +10,6 @@ def text_filter(text):
 
 
 def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
-
     chunks =  []
     pages = len(text_dict)
 
@@ -29,6 +28,7 @@ def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
 
         text += raw_text
         clean_text = text_filter(text)
+        # Only chunk for raw_text
         chunks += split_contexts(clean_text, chunk_size=300, overlap=False)
 
     # Tables cannot be recognized by pdfplumber
@@ -41,7 +41,8 @@ def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
         if len(split_contexts(curr_text + chunk, chunk_size=300, overlap=False)) == 1:
             curr_text += chunk
         else:
-            final_chunks.append(curr_text)
+            if len(curr_text) > 0:
+                final_chunks.append(curr_text)
             curr_text = chunk
 
     final_chunks.append(curr_text)

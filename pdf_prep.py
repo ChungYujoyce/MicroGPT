@@ -23,11 +23,11 @@ def table_postprocess():
     pass
 
 # Step 2: Table parsing (cell/column/row) with TableTransformer
-def img_to_table(image_paths, dis_dir):               
+def img_to_table(image_paths, bboxes, dis_dir):               
     # walk through all tables in each of PDF
     table_dict = dict()
-    for file in image_paths:
-        data, cropped_table = OCR(file)
+    for file, bbox in zip(image_paths, bboxes):
+        data, cropped_table = OCR(file, bbox)
         page = file.split('/')[-2].split('_')[-1]
         table = []
         for i in range(len(cropped_table)):
@@ -57,13 +57,15 @@ def text_extract(pdf_dir, dis_dir):
     pdf = pdfplumber.open(pdf_dir)
     pages = pdf.pages
     text_dict = defaultdict(dict)
-
+    bboxes = []
+    
     for page_idx in range(len(pages)):
 
-        table_text, raw_text = extract_text_without_tables(pages[page_idx], page_idx+1)
-
+        table_text, raw_text, bbox = extract_text_without_tables(pages[page_idx], page_idx+1)
+            
         text_dict[page_idx]['table_text'] = table_text
         text_dict[page_idx]['raw_text'] = raw_text
+        bboxes.append(bbox)
 
         with open(f'{dis_dir}/page_{page_idx+1}/table_text.txt', 'w', encoding='utf-8') as f:
             f.write(text_dict[page_idx]['table_text'])
@@ -71,7 +73,7 @@ def text_extract(pdf_dir, dis_dir):
         with open(f'{dis_dir}/page_{page_idx+1}/raw_text.txt', 'w', encoding='utf-8') as f:
             f.write(text_dict[page_idx]['raw_text'])
   
-    return text_dict
+    return text_dict, bboxes
     
 
 def pdf_prep(parsed_dir, file_name, source_file_path):
@@ -80,7 +82,7 @@ def pdf_prep(parsed_dir, file_name, source_file_path):
     Path(inter_path).mkdir(parents=True, exist_ok=True)
     
     image_paths = pdf_to_img(source_file_path, inter_path)    
-    text_dict = text_extract(source_file_path, inter_path)
-    table_dict = img_to_table(image_paths, inter_path)
+    text_dict, bboxes = text_extract(source_file_path, inter_path)
+    table_dict = img_to_table(image_paths, bboxes, inter_path)
 
     return table_dict, text_dict

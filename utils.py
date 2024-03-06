@@ -15,6 +15,8 @@ from langchain.embeddings import HuggingFaceEmbeddings
 
 #Parse PDFs excluding tables.
 def extract_text_without_tables(p, page_idx):
+    
+    
     try:
         ts = {
             "vertical_strategy": "lines",
@@ -23,6 +25,8 @@ def extract_text_without_tables(p, page_idx):
             "explicit_horizontal_lines": p.edges,
             "intersection_y_tolerance": 10,
         }
+        # p.to_image().debug_tablefinder(ts).save('Out.jpg')
+        
         # Get the bounding boxes of the tables on the page.
         bboxes = [table.bbox for table in p.find_tables(table_settings=ts)]
         table_texts, raw_texts = "", ""
@@ -51,6 +55,8 @@ def extract_text_without_tables(p, page_idx):
             "explicit_horizontal_lines": h_lines,
             "intersection_y_tolerance": 10,
         }
+        # p.to_image().debug_tablefinder(ts).save('Out.jpg')
+        
         # Get the bounding boxes of the tables on the page.
         bboxes = [table.bbox for table in p.find_tables(table_settings=ts)]
         table_texts, raw_texts = "", ""
@@ -65,7 +71,11 @@ def extract_text_without_tables(p, page_idx):
         else:
             raw_texts = p.extract_text()
     
-    return table_texts, raw_texts
+    if len(bboxes) > 0:
+        bboxes = [(b[0] / p.width, b[1] / p.height, b[2] / p.width, b[3] / p.height)for b in bboxes]
+        bboxes = sorted(bboxes, key=lambda x: x[1])
+        
+    return table_texts, raw_texts, bboxes
 
 
 def log_to_csv(question, answer):

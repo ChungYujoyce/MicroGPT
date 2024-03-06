@@ -182,7 +182,7 @@ def run_update():
         app.logger.info(revise_result)
         
         with request_lock:
-            db_manager.update_text(_id, revise_result)
+            db_manager.update_text(_id, revise_result.strip())
 
         load_DB()
         return "Script executed successfully", 200

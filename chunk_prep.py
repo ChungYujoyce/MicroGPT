@@ -5,11 +5,13 @@ from utils import split_contexts
 
 def text_filter(text):
     # take off copyright line
-    idx = re.search(r"©", text).span()[0]
+    idx = len(text)
+    if re.search(r"©", text):
+        idx = re.search(r"©", text).span()[0]
     return text[:idx]
 
 
-def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
+def text_to_chunk(table_dict, text_dict, dis_dir, file_name) -> Document:
     chunks =  []
     pages = len(text_dict)
 
@@ -22,6 +24,7 @@ def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
                 table_name = table.split('.')[0].split('/')[-1]
                 if table_text.find(table_name) != -1:
                     table_content = open(table, "r").read()
+                    table_content = table_content.replace(',',' | ')
                     table_text = table_text.replace(f"<|page_{page_idx+1}_"+table_name+"|>", "\n\n"+table_content+"\n\n")
             chunks.append(table_text)
             table_dict[page_idx] = []
@@ -51,11 +54,12 @@ def text_to_chunk(table_dict, text_dict, dis_dir) -> Document:
     ## 1. shrink chunk size if possible
     docs = []
     for i in range(len(final_chunks)):
+        c = f'{file_name.upper()}\n' + final_chunks[i].strip()
         with open(f'{dis_dir}/chunk_{i+1}.txt', 'w', encoding='utf-8') as f:
-            f.write(final_chunks[i])
+            f.write(c)
         
         # transform txt chunks into langchain Document type
-        doc = Document(page_content=final_chunks[i], metadata={"source": f'{dis_dir}/chunk_{i+1}.txt'})
+        doc = Document(page_content=c, metadata={"source": f'{dis_dir}/chunk_{i+1}.txt'})
         docs.append(doc)
 
     return docs

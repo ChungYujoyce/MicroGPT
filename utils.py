@@ -1,8 +1,13 @@
 import pdfplumber
 from collections import Counter
+import re
 import nltk
-nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+
 
 import os
 import csv

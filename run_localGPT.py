@@ -39,6 +39,8 @@ from constants import (
 )
 
 
+
+
 def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
     """
     Select a model for text generation using the HuggingFace library.
@@ -85,9 +87,10 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
         model=model,
         tokenizer=tokenizer,
         max_length=MAX_NEW_TOKENS,
-        temperature=0,
+        do_sample=False,
+        # temperature=0,
         # top_p=0.95,
-        repetition_penalty=1.15,
+        # repetition_penalty=1.15,
         generation_config=generation_config,
     )
 
@@ -133,7 +136,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
 
     # load the vectorstore
     db = Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=embeddings, client_settings=CHROMA_SETTINGS)
-    retriever = db.as_retriever()
+    retriever = db.as_retriever(search_kwargs={"k": 8})
 
     # get the prompt template and memory if set by the user.
     prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)

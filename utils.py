@@ -7,7 +7,10 @@ try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
-
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
 
 import os
 import csv
@@ -154,3 +157,23 @@ def split_contexts(context: str, chunk_size=1000, overlap=False):
         num_words = 0
         
     return all_chunks
+
+
+def clean_text(text: str) -> str:
+
+    # Convert text to lowercase
+    text = text.lower()
+
+    # Remove stopwords from text using regex
+    stopwords_list = set(nltk.corpus.stopwords.words('english'))
+    stopwords_pattern = r'\b(?:{})\b'.format('|'.join(stopwords_list))
+    text = re.sub(stopwords_pattern, '', text)
+
+    # Replace punctuation, newline, tab with space
+    text = re.sub(r'[,.!?|]|[\n\t]', ' ', text)
+    # Replace multiple spaces with single space
+    text = re.sub(r'\s+', ' ', text)
+
+    text = text.strip()
+    text = text.split(" ")
+    return text

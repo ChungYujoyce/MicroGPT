@@ -35,7 +35,7 @@ def text_to_chunk(table_dict, text_dict, dis_dir, file_name) -> Document:
         chunks += split_contexts(clean_text, chunk_size=300, overlap=False)
 
     # Tables cannot be recognized by pdfplumber
-    chunks += [f"\n\n{open(table, 'r').read()}" for page, tables in table_dict.items() for table in tables if tables != []]
+    chunks += [f"\n\n{open(table, 'r').read().replace(',',' | ')}" for page, tables in table_dict.items() for table in tables if tables != []]
 
     final_chunks = []
     curr_text = ""
@@ -47,14 +47,15 @@ def text_to_chunk(table_dict, text_dict, dis_dir, file_name) -> Document:
             if len(curr_text) > 0:
                 final_chunks.append(curr_text)
             curr_text = chunk
-
+    
     final_chunks.append(curr_text)
 
     ## [TODO]
     ## 1. shrink chunk size if possible
     docs = []
     for i in range(len(final_chunks)):
-        c = f'{file_name.upper()}\n' + final_chunks[i].strip()
+        chunk = re.sub(r'\n{3,}', '\n\n', final_chunks[i]).strip()
+        c = f'{file_name.upper()}\n' + chunk
         with open(f'{dis_dir}/chunk_{i+1}.txt', 'w', encoding='utf-8') as f:
             f.write(c)
         

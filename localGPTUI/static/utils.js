@@ -1,62 +1,143 @@
-// Function to enable editing of the clicked string
-function editString(button) {
-  $('#confirmationModal').modal('show');
-  $('#confirmAction').on('click', function() {
-    var listItem = button.parentNode;
+function isTableLine(line) {
+        // Check if the line contains the pipe character '|'
+        return line.includes('|');
+    }
 
-    // Get the <span> element containing the string
-    var spanElement = listItem.querySelector("span");
 
-    // Display input field with the current string value
-    var stringValue = spanElement.textContent;
-    var editInput = document.getElementById("editInput");
-    editInput.value = stringValue;
-    editInput.style.display = "block";
-    editInput.focus();
+function displayTextInTable(button, text) {
+    
+    var parentDiv = button.parentNode.parentNode;
+    var contentDiv = parentDiv.querySelector("span");
 
-    // Hide the <span> element and the "Revise" button
-    spanElement.style.display = "none";
-    button.style.display = "none";
-
-    // Display the save button associated with the edited string
-    var saveButton = listItem.querySelector(".saveButton");
-    saveButton.style.display = "inline-block";
-
-    // Close the modal
-    $('#confirmationModal').modal('hide');
-  });
+    const lines = text.split('\n');
+    let inTable = false; // flag to check if we're currently in the table
+    if (contentDiv.children.length === 0) {
+        contentDiv.innerHTML = ''; // Clear existing content
+        lines.forEach((line, index) => {
+            if (isTableLine(line)) {
+                if (!inTable) {
+                    inTable = true; // we're entering the table
+                    const table = document.createElement('table');
+                    table.className = 'table table-bordered'; // Bootstrap table style
+                    const row = document.createElement(index === 0 ? 'thead' : 'tr');
+                    const cells = line.split('|').map(cell => cell.trim());
+                    cells.forEach(cell => {
+                        const element = index === 0 ? 'th' : 'td';
+                        const td = document.createElement(element);
+                        td.textContent = cell;
+                        row.appendChild(td);
+                    });
+                    table.appendChild(row);
+                    contentDiv.appendChild(table);
+                } else {
+                    const row = document.createElement('tr');
+                    const cells = line.split('|').map(cell => cell.trim());
+                    cells.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        row.appendChild(td);
+                    });
+                    contentDiv.lastChild.appendChild(row);
+                }
+            } else {
+                if (inTable) {
+                    inTable = false; // we're exiting the table
+                }
+                const div = document.createElement('div');
+                div.textContent = line;
+                contentDiv.appendChild(div);
+            }
+        });
+    };
 }
 
-// Function to save the edited string
-function saveEditedString(button, id) {
-    event.preventDefault();
+function getRevisedContent(button) {
+        
+    var parentDiv = button.parentNode;
+    var contentDiv = parentDiv.querySelector("span");
+    let revisedContent = ''; // Initialize an empty string to store the revised content
 
-    var listItem = button.parentNode;
+    // Loop through all child nodes of the contentDiv
+    contentDiv.childNodes.forEach(node => {
+        // Check if the node is a table
+        if (node.tagName && node.tagName.toLowerCase() === 'table') {
+            // Add a newline character above the table
+            revisedContent += '\n\n';
 
-    // Get the edited string from the input field
-    var editedString = document.getElementById("editInput").value;
+            // Loop through the rows of the table
+            node.querySelectorAll('tr').forEach(row => {
+                // Loop through the cells of each row
+                row.querySelectorAll('td, th').forEach((cell, index) => {
+                    // Add the cell content to the revised content string
+                    revisedContent += cell.innerHTML.replace(/<br\s*\/?>/gi, " ").trim();
 
-    // Update the <span> element with the new value
-    var spanElement = listItem.querySelector("span");
-    spanElement.textContent = editedString;
+                    // Add "|" if it's not the last cell in the row
+                    if (index < row.cells.length - 1) {
+                        revisedContent += ' | ';
+                    }
+                });
 
-    // Hide the input field and save button
-    var editInput = document.getElementById("editInput");
-    editInput.style.display = "none";
-    button.style.display = "none";
+                // Add a newline character after each row
+                revisedContent += '\n';
+            });
 
-    // Show the <span> element and "Revise" button
-    spanElement.style.display = "block";
-    var reviseButton = listItem.querySelector(".reviseButton");
-    reviseButton.style.display = "inline-block";
+            // Add a newline character below the table
+            revisedContent += '\n\n';
+        } else {
+            // If the node is not a table, add its text content to the revised content string
+            let text_content = node.innerHTML.replace(/<br\s*\/?>/gi, "\n");
+            revisedContent += text_content
+            revisedContent += '\n';
+        }
+    });
+    revisedContent = revisedContent.replace(/\n{3,}/g, "\n\n");
+    revisedContent = revisedContent.trim();
+    // console.log("Revised Content:", revisedContent); // Print the revised content to the console
+    alert("Revised Content:\n" + revisedContent); // Display the revised content in an alert dialog
+    return revisedContent; // Return the revised content
+}
 
+function toggleEditing(button) {
+    // $('#confirmationModal').modal('show');
+    // $('#confirmAction').on('click', function() {
+        
+    var parentDiv = button.parentNode;
+    var contentDiv = parentDiv.querySelector("span");
+    const reviseButton = button;
+    const saveButton = parentDiv.querySelector(".saveButton");
+    const isEditable = contentDiv.getAttribute('contenteditable') === 'true';
+    console.log(isEditable);
+    if (!isEditable) {
+        originalContent = contentDiv.innerHTML; // Store the original content
+        contentDiv.setAttribute('contenteditable', 'true'); // Make content editable
+        contentDiv.focus(); // Put focus on the contentDiv for immediate editing
+        reviseButton.textContent = 'Cancel';
+        saveButton.style.display = 'inline-block';
+  
+    } else {
+        contentDiv.innerHTML = originalContent; // Reset content to original state
+        contentDiv.removeAttribute('contenteditable'); // Make content non-editable
+        reviseButton.textContent = 'Revise';
+        saveButton.style.display = 'none';
+    }
+  // });
+}
+
+function saveContent(button, id) {
+    const revisedContent = getRevisedContent(button);
+    var parentDiv = button.parentNode;
+    var contentDiv = parentDiv.querySelector("span");
+    contentDiv.removeAttribute('contenteditable'); // Make content non-editable
+    parentDiv.querySelector(".reviseButton").textContent = 'Revise';
+    button.style.display = 'none';
+    
     // id 
     // editedString
     var form = document.getElementById("dataForm");
     var formData = new FormData();
     formData.append("editInput", true);
     formData.append("id", id);
-    formData.append("revise_result", editedString);
+    formData.append("revise_result", revisedContent);
 
     // Fetch API to submit the form data
     fetch(form.action, {
@@ -75,6 +156,84 @@ function saveEditedString(button, id) {
         console.error("Error submitting form:", error.message);
     });
 }
+
+// Function to enable editing of the clicked string
+// function editString(button) {
+//   $('#confirmationModal').modal('show');
+//   $('#confirmAction').on('click', function() {
+//     var listItem = button.parentNode;
+
+//     // Get the <span> element containing the string
+//     var spanElement = listItem.querySelector("span");
+
+//     // Display input field with the current string value
+//     var stringValue = spanElement.textContent;
+//     var editInput = document.getElementById("editInput");
+//     editInput.value = stringValue;
+//     editInput.style.display = "block";
+//     editInput.focus();
+
+//     // Hide the <span> element and the "Revise" button
+//     spanElement.style.display = "none";
+//     button.style.display = "none";
+
+//     // Display the save button associated with the edited string
+//     var saveButton = listItem.querySelector(".saveButton");
+//     saveButton.style.display = "inline-block";
+
+//     // Close the modal
+//     $('#confirmationModal').modal('hide');
+//   });
+// }
+
+// // Function to save the edited string
+// function saveEditedString(button, id) {
+//     event.preventDefault();
+
+//     var listItem = button.parentNode;
+
+//     // Get the edited string from the input field
+//     var editedString = document.getElementById("editInput").value;
+
+//     // Update the <span> element with the new value
+//     var spanElement = listItem.querySelector("span");
+//     spanElement.textContent = editedString;
+
+//     // Hide the input field and save button
+//     var editInput = document.getElementById("editInput");
+//     editInput.style.display = "none";
+//     button.style.display = "none";
+
+//     // Show the <span> element and "Revise" button
+//     spanElement.style.display = "block";
+//     var reviseButton = listItem.querySelector(".reviseButton");
+//     reviseButton.style.display = "inline-block";
+
+//     // id 
+//     // editedString
+//     var form = document.getElementById("dataForm");
+//     var formData = new FormData();
+//     formData.append("editInput", true);
+//     formData.append("id", id);
+//     formData.append("revise_result", editedString);
+
+//     // Fetch API to submit the form data
+//     fetch(form.action, {
+//         method: "PUT",
+//         body: formData
+//     })
+//     .then(response => {
+//         if (!response.ok) {
+//             throw new Error("Network response was not ok");
+//         }
+//         // Handle success response if needed
+//         console.log("Form submitted successfully");
+//     })
+//     .catch(error => {
+//         // Handle error if needed
+//         console.error("Error submitting form:", error.message);
+//     });
+// }
 
 function deleteString(button, id, url) {
     event.preventDefault();

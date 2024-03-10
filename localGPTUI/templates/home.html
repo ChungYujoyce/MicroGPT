@@ -158,6 +158,7 @@
                     data-bs-target="#collapse{{ loop.index0 }}"
                     aria-expanded="true"
                     aria-controls="collapse{{ loop.index0 }}"
+                    onclick="displayTextInTable(this, `{{ item[2] }}`)"
                   >
                     {{ item[1] }}
                     <!-- Source -->
@@ -165,7 +166,7 @@
                 </h2>
                 <div
                   id="collapse{{ loop.index0 }}"
-                  class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
+                  class="accordion-collapse collapse"
                   aria-labelledby="heading{{ loop.index0 }}"
                   data-bs-parent="#accordionExample"
                 >
@@ -176,13 +177,15 @@
                       text-align: justify;
                       margin-left: 5%;
                       margin-right: 5%;">
-                    {{ item[2] }}
-                    <!-- Content -->
                   </span>
-                  <button class="reviseButton" onclick="editString(this)">Revise</button>
+                    
+                <button id="reviseButton" class="reviseButton" onclick="toggleEditing(this)">Revise</button>
+                <button id="saveButton" class="saveButton" style="display: none;" onclick="saveContent(this, '{{ item[0] }}')">Save</button>
+                    
+                  <!--<button class="reviseButton" onclick="editString(this)">Revise</button> -->
                   <button class="deleteButton" onclick="deleteString(this, '{{ item[0] }}', '{{ url_for('home_page') }}')">Delete</button>
                   <!-- Display save button for each string -->
-                  <button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')" style="display: none;">Save</button>
+                  <!--<button class="saveButton" onclick="saveEditedString(this, '{{ item[0] }}')" style="display: none;">Save</button> -->
                 </div>
               </div>
               {% endfor %}

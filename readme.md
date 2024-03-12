@@ -92,7 +92,7 @@ python run_localGPT.py -s
 **MicroGPT:**
 * `pdf_prep.py`: 
     * Step 1: PDF to Image transformation for the model to process.
-    * Step 2: Table parsing (cell/column/row) with TableTransformer and OCR model.
+    * Step 2: Table parsing (cell/column/row) with [TableTransformer](https://github.com/microsoft/table-transformer) and OCR model.
         * Table Transformer can detect tables on each page and crop them out. 
         * The OCR model can identify the characters in the table.
     * Step 3: Save as `.csv` file as it's a better data structure than pure lists.

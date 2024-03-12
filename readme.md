@@ -7,7 +7,7 @@
 2. RAG system (Knowledge database) management
 3. VectorStore management
 ## Workflow Overview
-![image](https://hackmd.io/_uploads/r1MKJPppT.png)
+![image](https://hackmd.io/_uploads/B1rlQwTa6.png)
 
 ## Environment Setup
 

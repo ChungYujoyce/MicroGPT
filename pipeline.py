@@ -38,6 +38,7 @@ def main(args):
             table_dict, text_dict = pdf_prep(parse_dir, file_name, source_file_path)
 
             paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
+            logging.info(f"==============================>{file_name}")
             Path(paragraph_path).mkdir(parents=True, exist_ok=True)
             doc_list += text_to_chunk(table_dict, text_dict, paragraph_path, file_name)
     

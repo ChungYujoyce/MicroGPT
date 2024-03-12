@@ -82,7 +82,7 @@ def home_page():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=3111, help="Port to run the UI on. Defaults to 5111.")
+    parser.add_argument("--port", type=int, default=5111, help="Port to run the UI on. Defaults to 5111.")
     parser.add_argument(
         "--host",
         type=str,

@@ -16,7 +16,7 @@ from prompt_template_utils import get_prompt_template
 # from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.vectorstores import Chroma
 from langchain.docstore.document import Document
-from langchain_community.retrievers import BM25Retriever
+#from langchain_community.retrievers import BM25Retriever
 from utils import clean_text
 from werkzeug.utils import secure_filename
 
@@ -89,11 +89,11 @@ def load_DB():
     )
     app.logger.info(f'DB size: {DB._collection.count()}')
 
-    RETRIEVER = DB.as_retriever(search_kwargs={"k": k * 2})
+    RETRIEVER = DB.as_retriever(search_kwargs={"k": k})
     
     collections = DB.get()
     documents = [Document(page_content=c, metadata=m) for m, c in zip(collections['metadatas'], collections['documents'])]
-    RETRIEVER_BM25 = BM25Retriever.from_documents(documents=documents, preprocess_func=clean_text, k=k)
+#    RETRIEVER_BM25 = BM25Retriever.from_documents(documents=documents, preprocess_func=clean_text, k=k)
     
     prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
 
@@ -101,7 +101,7 @@ def load_DB():
         llm=LLM,
         chain_type="stuff",
         retriever=RETRIEVER,
-        retriever_bm25=RETRIEVER_BM25,
+#        retriever_bm25=RETRIEVER_BM25,
         return_source_documents=SHOW_SOURCES,
         chain_type_kwargs={
             "prompt": prompt,

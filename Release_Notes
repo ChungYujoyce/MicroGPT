@@ -1,0 +1,25 @@
+Release Date:     03-14-2024
+Release Version:  0.1
+Code Repo:        git clone -b develop http://10.2.6.251:8080/Bonobo.Git.Server/SuperGPT.git
+Branch:           develop
+Tag:              Release_0_1
+LLM:              llama-2-7b-chat.Q4_K_M.gguf
+Datasets:         79+50 PDF files
+Access URL:       http://172.24.121.207:5111
+ChangeLog:
+    - pdfplumber table bboxes detection main logic, table_text, raw_text extraction, clean_text, split_text utils
+    - same logic as run_localGPT.py, but on web backend side, handling requests
+    - link pdf_prep.py and chunk_prep.py together and do end-to-end data ingestion
+    - concat tables and texts together and chunk into designated size
+    - pdf to img, image to table using OCR, text extraction logic
+    - refer to table transformer, code link in the code line 1. main table detection and OCR logic
+    - refactor db_management.py to Class for run_localGPT_API.py to do function calls
+    - vector db management main python script
+    - POST,GET,UPDATE,DELETE logic updates, codebase refactoring, add VDB management
+    - move css outside of html as a individual file to clean up the codebase
+    - add update/delete/cancel button on frontend and javascipt logic;add table format display enhancement logic
+    - Set CONTEXT_WINDOW_SIZE to 4096
+    - Set MODEL_BASENAME to "llama-2-7b-chat.Q4_K_M.gguf"
+    - Add WathchDog for the first release 0.1
+    - Commnet out RETRIEVER_BM25 for the first release 0.1
+ 

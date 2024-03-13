@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:24.01-py3
+FROM nvcr.io/nvidia/pytorch:23.08-py3
 WORKDIR /workspace/
 RUN apt-get update && \
  apt-get install -y poppler-utils

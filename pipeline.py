@@ -43,6 +43,7 @@ def main():
     def process_page(idx, file):
         file_name = file['filename']
         source_file_path = file['source_file_path']
+        table_dict, text_dict = dict(), dict()
         try:
             table_dict, text_dict = pdf_prep(args.parse_dir, file_name, source_file_path)
         except:
@@ -90,8 +91,6 @@ def main():
     with open(f'{PERSIST_DIRECTORY}/mapping.json', 'w') as f:
         json.dump({_id:source for _id, source in zip(doc_ids, doc_sources)}, f, indent=4)
 
-    # move the contents in tmp folders to original one and delete after the updates
-        
     
 if __name__ == "__main__":
     main()

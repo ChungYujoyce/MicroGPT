@@ -1,5 +1,5 @@
 CUDA_VISIBLE_DEVICES=0,1 python vllm_server.py \
-    --model=/home/chsieh/joyce/MicroGPT/models/models--mistralai--Mixtral-8x7B-Instruct-v0.1/snapshots/1e637f2d7cb0a9d6fb1922f305cb784995190a83 \
+    --model=/data/nlp/Mixtral-8x7B-Instruct-v0.1 \
     --max-model-len=128 \
     --tensor-parallel-size=2 \
     --pipeline-parallel-size=1 \

@@ -23,17 +23,11 @@ from langchain.embeddings import HuggingFaceEmbeddings
 
 #Parse PDFs excluding tables.
 def extract_text_without_tables(p, page_idx):
-    
-    
     try:
-        ts = {
-            "vertical_strategy": "lines",
-            "horizontal_strategy": "lines",
-            "explicit_vertical_lines": p.edges,
-            "explicit_horizontal_lines": p.edges,
-            "intersection_y_tolerance": 10,
-        }
-        # p.to_image().debug_tablefinder(ts).save('Out.jpg')
+        ts = {"vertical_strategy": "text","horizontal_strategy": "text", "min_words_vertical": 3, "min_words_horizontal": 18, "text_tolerance": 3}
+        p.to_image().debug_tablefinder(ts).save('Out.jpg')
+        # import pdb
+        # pdb.set_trace()
         
         # Get the bounding boxes of the tables on the page.
         bboxes = [table.bbox for table in p.find_tables(table_settings=ts)]
@@ -42,10 +36,10 @@ def extract_text_without_tables(p, page_idx):
             head = 0
             for idx, __bbox in enumerate(bboxes):
                 x0, top, x1, bottom = __bbox
-                table_texts += p.crop((0, head, p.width, top), relative=False, strict=True).extract_text()
+                table_texts += p.crop((0, head, p.width, top), relative=False, strict=False).extract_text()
                 table_texts += f'<|page_{page_idx}_table_{idx+1}|>'
                 head = bottom
-            raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=True).extract_text()
+            raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=False).extract_text()
         else:
             raw_texts = p.extract_text()
     except:
@@ -63,7 +57,9 @@ def extract_text_without_tables(p, page_idx):
             "explicit_horizontal_lines": h_lines,
             "intersection_y_tolerance": 10,
         }
-        # p.to_image().debug_tablefinder(ts).save('Out.jpg')
+        p.to_image().debug_tablefinder(ts).save('Out.jpg')
+        import pdb
+        pdb.set_trace()
         
         # Get the bounding boxes of the tables on the page.
         bboxes = [table.bbox for table in p.find_tables(table_settings=ts)]
@@ -72,10 +68,10 @@ def extract_text_without_tables(p, page_idx):
             head = 0
             for idx, __bbox in enumerate(bboxes):
                 x0, top, x1, bottom = __bbox
-                table_texts += p.crop((0, head, p.width, top), relative=False, strict=True).extract_text()
+                table_texts += p.crop((0, head, p.width, top), relative=False, strict=False).extract_text()
                 table_texts += f'<|page_{page_idx}_table_{idx+1}|>'
                 head = bottom
-            raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=True).extract_text()
+            raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=False).extract_text()
         else:
             raw_texts = p.extract_text()
     

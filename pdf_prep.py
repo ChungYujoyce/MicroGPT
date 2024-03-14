@@ -1,4 +1,5 @@
 import os
+import time
 from collections import defaultdict 
 from utils import extract_text_without_tables
 from pdf2image import convert_from_path
@@ -80,9 +81,10 @@ def pdf_prep(parsed_dir, file_name, source_file_path):
 
     inter_path = f'{parsed_dir}/{file_name}/intermediate'
     Path(inter_path).mkdir(parents=True, exist_ok=True)
-    
+    start = time.time()
     image_paths = pdf_to_img(source_file_path, inter_path)    
+    
     text_dict, bboxes = text_extract(source_file_path, inter_path)
     table_dict = img_to_table(image_paths, bboxes, inter_path)
-
+    
     return table_dict, text_dict

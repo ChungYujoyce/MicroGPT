@@ -1,8 +1,8 @@
 from transformers import AutoModelForObjectDetection
 import torch
+import time
 from PIL import Image
 from torchvision import transforms
-from transformers import TableTransformerForObjectDetection
 import numpy as np
 import csv
 import easyocr
@@ -10,12 +10,11 @@ from easyocr.utils import reformat_input
 from tqdm.auto import tqdm
 
 #load model
-model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm")
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model.to(device)
 
-structure_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-structure-recognition-v1.1-all")
-structure_model.to(device)
+model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm",  device_map="auto")
+structure_model = AutoModelForObjectDetection.from_pretrained("microsoft/table-structure-recognition-v1.1-all",  device_map="auto")
+reader = easyocr.Reader(['en']) # this needs to run only once to load the model into memory 
 
 class MaxResize(object):
     def __init__(self, max_size=800):
@@ -39,11 +38,12 @@ def OCR(image_path, bbox):
 
     pixel_values = detection_transform(image).unsqueeze(0)
     pixel_values = pixel_values.to(device)
-
+    
+    
     # forward pass
     with torch.no_grad():
         outputs = model(pixel_values)
-
+    
     # postprocessing
     # for output bounding box post-processing
     def box_cxcywh_to_xyxy(x):
@@ -192,13 +192,13 @@ def OCR(image_path, bbox):
 
         return cell_coordinates
 
-    reader = easyocr.Reader(['en']) # this needs to run only once to load the model into memory 
+    
 
     def apply_ocr(cell_coordinates):
         # let's OCR row by row
         data = dict()
         max_num_columns = 0
-        for idx1, row in enumerate(tqdm(cell_coordinates)):
+        for idx1, row in enumerate(cell_coordinates):
             
             row_text = []
             for idx2, cell in enumerate(row["cells"]):
@@ -227,7 +227,7 @@ def OCR(image_path, bbox):
 
                 data[idx1] = row_text
 
-        print("Max number of columns:", max_num_columns)
+        # print("Max number of columns:", max_num_columns)
 
         # pad rows which don't have max_num_columns elements
         # to make sure all rows have the same number of columns
@@ -240,6 +240,8 @@ def OCR(image_path, bbox):
 
     data = dict()
     cropped_table_list = []
+
+    
     for i in range(len(tables_crops)):
         cropped_table = tables_crops[i]['image'].convert("RGB")
         cropped_table_list.append(tables_crops[i]['image'])
@@ -247,6 +249,7 @@ def OCR(image_path, bbox):
         pixel_values = pixel_values.to(device)
         # forward pass
         with torch.no_grad():
+            # bottle neck
             outputs = structure_model(pixel_values)
 
         # update id2label to include "no object"
@@ -256,5 +259,5 @@ def OCR(image_path, bbox):
         cell = outputs_to_objects(outputs, cropped_table.size, structure_id2label)
         cell_coordinates = get_cell_coordinates_by_row(cell)
         data[f'table_{i}'] = apply_ocr(cell_coordinates)
-    
+        
     return data, cropped_table_list

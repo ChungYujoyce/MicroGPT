@@ -20,8 +20,6 @@ def pdf_to_img(source_dir, dis_dir):
         image_paths.append(filename)
     return image_paths
 
-def table_postprocess():
-    pass
 
 # Step 2: Table parsing (cell/column/row) with TableTransformer
 def img_to_table(image_paths, bboxes, dis_dir):               

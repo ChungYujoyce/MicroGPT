@@ -21,37 +21,42 @@ from langchain.embeddings import HuggingFaceBgeEmbeddings
 from langchain.embeddings import HuggingFaceEmbeddings
 
 
+# Get the bounding boxes of the tables on the page.
+def get_bboxes(table_settings, p, page_idx):
+
+    bboxes = [table.bbox for table in p.find_tables(table_settings)]
+    table_texts, raw_texts = "", ""
+    if len(bboxes) > 0:
+        head = 0
+        for idx, __bbox in enumerate(bboxes):
+            x0, top, x1, bottom = __bbox
+            table_texts += p.crop((0, head, p.width, top), relative=False, strict=True).extract_text()
+            table_texts += f'<|page_{page_idx}_table_{idx+1}|>'
+            head = bottom
+        raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=True).extract_text()
+    else:
+        raw_texts = p.extract_text()
+
+    return table_texts, raw_texts, bboxes
+
+
 #Parse PDFs excluding tables.
 def extract_text_without_tables(p, page_idx):
     
     try:
         try:
-            # ts = {
-            #     "vertical_strategy": "lines",
-            #     "horizontal_strategy": "lines",
-            #     "explicit_vertical_lines": p.edges,
-            #     "explicit_horizontal_lines": p.edges,
-            #     "intersection_y_tolerance": 10,
-            # }
-            # p.to_image().debug_tablefinder(ts).save('Out.jpg')
-            ts = {"vertical_strategy": "text","horizontal_strategy": "text", "min_words_vertical": 3, "min_words_horizontal": 18, "text_tolerance": 3}
-            p.to_image().debug_tablefinder(ts).save('Out.jpg')
+            ts = {
+                "vertical_strategy": "lines",
+                "horizontal_strategy": "lines",
+                "explicit_vertical_lines": p.edges,
+                "explicit_horizontal_lines": p.edges,
+                "intersection_y_tolerance": 10,
+            }
+            #p.to_image().debug_tablefinder(ts).save('Out.jpg')
             # import pdb
             # pdb.set_trace()
-            
-            # Get the bounding boxes of the tables on the page.
-            bboxes = [table.bbox for table in p.find_tables(table_settings=ts)]
-            table_texts, raw_texts = "", ""
-            if len(bboxes) > 0:
-                head = 0
-                for idx, __bbox in enumerate(bboxes):
-                    x0, top, x1, bottom = __bbox
-                    table_texts += p.crop((0, head, p.width, top), relative=False, strict=True).extract_text()
-                    table_texts += f'<|page_{page_idx}_table_{idx+1}|>'
-                    head = bottom
-                raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=True).extract_text()
-            else:
-                raw_texts = p.extract_text()
+            table_texts, raw_texts, bboxes = get_bboxes(ts, p, page_idx)
+            print("*" * 50)
         except:
             v_lines, h_lines = [], []
             if len(p.lines) > 0:
@@ -67,31 +72,30 @@ def extract_text_without_tables(p, page_idx):
                 "explicit_horizontal_lines": h_lines,
                 "intersection_y_tolerance": 10,
             }
-            p.to_image().debug_tablefinder(ts).save('Out2.jpg')
-            
-            # Get the bounding boxes of the tables on the page.
-            bboxes = [table.bbox for table in p.find_tables(table_settings=ts)]
-            table_texts, raw_texts = "", ""
-            if len(bboxes) > 0:
-                head = 0
-                for idx, __bbox in enumerate(bboxes):
-                    x0, top, x1, bottom = __bbox
-                    table_texts += p.crop((0, head, p.width, top), relative=False, strict=True).extract_text()
-                    table_texts += f'<|page_{page_idx}_table_{idx+1}|>'
-                    head = bottom
-                raw_texts = p.crop((0, head, p.width, p.height), relative=False, strict=True).extract_text()
-            else:
-                raw_texts = p.extract_text()
-        
+            #p.to_image().debug_tablefinder(ts).save('Out2.jpg')
+            table_texts, raw_texts, bboxes = get_bboxes(ts, p, page_idx)
+            print("^" * 50)
         if len(bboxes) > 0:
             bboxes = [(b[0] / p.width, b[1] / p.height, b[2] / p.width, b[3] / p.height)for b in bboxes]
             bboxes = sorted(bboxes, key=lambda x: x[1])
 
     except:
-        # pdfplumber still fails to get good table bboxes
-        bboxes = []
-        raw_texts = p.extract_text()
-        table_texts = ""
+        print("=" * 50)
+        # pdfplumber still fails to get good table bboxes (got negative widths / heights)
+        #ts = {"vertical_strategy": "text","horizontal_strategy": "text", "min_words_vertical": 3, "min_words_horizontal": 18, "text_tolerance": 3}
+        ts = {
+            "vertical_strategy": "text",
+            "horizontal_strategy": "text", 
+            "min_words_vertical": 3, 
+            "min_words_horizontal": 20, 
+            "text_tolerance": 8
+        }
+            
+        table_texts, raw_texts, bboxes = get_bboxes(ts, p, page_idx)
+        print(len(bboxes))
+        # if len(bboxes) > 0:
+        #     bboxes = [(b[0] / p.width, b[1] / p.height, b[2] / p.width, b[3] / p.height)for b in bboxes]
+        #     bboxes = sorted(bboxes, key=lambda x: x[1])
         
     return table_texts, raw_texts, bboxes
 

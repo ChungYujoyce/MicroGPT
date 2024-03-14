@@ -34,12 +34,14 @@ def main(args):
         for file in files:
             file_name = os.path.splitext(file)[0]
             source_file_path = os.path.join(root, file)
+            try:
+                table_dict, text_dict = pdf_prep(parse_dir, file_name, source_file_path)
 
-            table_dict, text_dict = pdf_prep(parse_dir, file_name, source_file_path)
-
-            paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
-            Path(paragraph_path).mkdir(parents=True, exist_ok=True)
-            doc_list += text_to_chunk(table_dict, text_dict, paragraph_path, file_name)
+                paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
+                Path(paragraph_path).mkdir(parents=True, exist_ok=True)
+                doc_list += text_to_chunk(table_dict, text_dict, paragraph_path, file_name)
+            except:
+                print(f"File {file_name} has error")
     
     doc_ids = []
     doc_sources = []

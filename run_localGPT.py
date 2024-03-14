@@ -12,10 +12,12 @@ from langchain.callbacks.manager import CallbackManager
 callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
 from prompt_template_utils import get_prompt_template
-from utils import get_embeddings
+from utils import get_embeddings, clean_text
 
 # from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.vectorstores import Chroma
+from langchain.docstore.document import Document
+from langchain_community.retrievers import BM25Retriever
 from transformers import (
     GenerationConfig,
     pipeline,
@@ -37,6 +39,8 @@ from constants import (
     MODELS_PATH,
     CHROMA_SETTINGS,
 )
+
+
 
 
 def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
@@ -85,9 +89,10 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
         model=model,
         tokenizer=tokenizer,
         max_length=MAX_NEW_TOKENS,
-        temperature=0.2,
+        do_sample=False,
+        # temperature=0,
         # top_p=0.95,
-        repetition_penalty=1.15,
+        # repetition_penalty=1.15,
         generation_config=generation_config,
     )
 
@@ -130,11 +135,18 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
     embeddings = get_embeddings(device_type)
 
     logging.info(f"Loaded embeddings from {EMBEDDING_MODEL_NAME}")
-
+    
+    # Return document size
+    k = 4
+    
     # load the vectorstore
     db = Chroma(persist_directory=PERSIST_DIRECTORY, embedding_function=embeddings, client_settings=CHROMA_SETTINGS)
-    retriever = db.as_retriever()
-
+    retriever = db.as_retriever(search_kwargs={"k": k * 2})
+    
+    collections = db.get()
+    documents = [Document(page_content=c, metadata=m) for m, c in zip(collections['metadatas'], collections['documents'])]
+    retriever_bm25 = BM25Retriever.from_documents(documents=documents, preprocess_func=clean_text, k=k)
+    
     # get the prompt template and memory if set by the user.
     prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)
 
@@ -146,6 +158,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
             llm=llm,
             chain_type="stuff",  # try other chains types as well. refine, map_reduce, map_rerank
             retriever=retriever,
+            retriever_bm25=retriever_bm25,
             return_source_documents=True,  # verbose=True,
             callbacks=callback_manager,
             chain_type_kwargs={"prompt": prompt, "memory": memory},
@@ -155,6 +168,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
             llm=llm,
             chain_type="stuff",  # try other chains types as well. refine, map_reduce, map_rerank
             retriever=retriever,
+            retriever_bm25=retriever_bm25,
             return_source_documents=True,  # verbose=True,
             callbacks=callback_manager,
             chain_type_kwargs={
@@ -249,7 +263,7 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
     if not os.path.exists(MODELS_PATH):
         os.mkdir(MODELS_PATH)
 
-    qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type=model_type)
+    qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type='mistral' if 'mistralai' in MODEL_ID else model_type)
     # Interactive questions and answers
     while True:
         query = input("\nEnter a query: ")

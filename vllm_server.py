@@ -3,8 +3,8 @@
 pip install vllm
 
 python vllm_server.py \
-    --model=${MODEL_PATH} \
-    --max-model-len=32768 \
+    --model=/workspace/models \
+    --max-model-len=1024 \
     --tensor-parallel-size=2 \
     --pipeline-parallel-size=1 \
     --trust-remote-code \

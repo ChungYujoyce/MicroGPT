@@ -31,3 +31,5 @@ pdfplumber
 # Streamlit related
 streamlit
 Streamlit-extras
+
+vllm

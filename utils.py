@@ -56,7 +56,7 @@ def extract_text_without_tables(p, page_idx):
             # import pdb
             # pdb.set_trace()
             table_texts, raw_texts, bboxes = get_bboxes(ts, p, page_idx)
-            print("*" * 50)
+            #print("*" * 50)
         except:
             v_lines, h_lines = [], []
             if len(p.lines) > 0:
@@ -74,13 +74,13 @@ def extract_text_without_tables(p, page_idx):
             }
             #p.to_image().debug_tablefinder(ts).save('Out2.jpg')
             table_texts, raw_texts, bboxes = get_bboxes(ts, p, page_idx)
-            print("^" * 50)
+            #print("^" * 50)
         if len(bboxes) > 0:
             bboxes = [(b[0] / p.width, b[1] / p.height, b[2] / p.width, b[3] / p.height)for b in bboxes]
             bboxes = sorted(bboxes, key=lambda x: x[1])
 
     except:
-        print("=" * 50)
+        #print("=" * 50)
         # pdfplumber still fails to get good table bboxes (got negative widths / heights)
         #ts = {"vertical_strategy": "text","horizontal_strategy": "text", "min_words_vertical": 3, "min_words_horizontal": 18, "text_tolerance": 3}
         ts = {
@@ -92,7 +92,6 @@ def extract_text_without_tables(p, page_idx):
         }
             
         table_texts, raw_texts, bboxes = get_bboxes(ts, p, page_idx)
-        print(len(bboxes))
         # if len(bboxes) > 0:
         #     bboxes = [(b[0] / p.width, b[1] / p.height, b[2] / p.width, b[3] / p.height)for b in bboxes]
         #     bboxes = sorted(bboxes, key=lambda x: x[1])

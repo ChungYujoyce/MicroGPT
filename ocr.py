@@ -12,8 +12,10 @@ from tqdm.auto import tqdm
 #load model
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm",  device_map="auto")
-structure_model = AutoModelForObjectDetection.from_pretrained("microsoft/table-structure-recognition-v1.1-all",  device_map="auto")
+model = AutoModelForObjectDetection.from_pretrained("microsoft/table-transformer-detection", revision="no_timm")
+structure_model = AutoModelForObjectDetection.from_pretrained("microsoft/table-structure-recognition-v1.1-all")
+model.to(device)
+structure_model.to(device)
 reader = easyocr.Reader(['en']) # this needs to run only once to load the model into memory 
 
 class MaxResize(object):
@@ -138,7 +140,7 @@ def get_cell_coordinates_by_row(table_data):
     return cell_coordinates
 
 
-def apply_ocr(cell_coordinates):
+def apply_ocr(cell_coordinates, cropped_table):
     # let's OCR row by row
     data = dict()
     max_num_columns = 0
@@ -177,6 +179,7 @@ def apply_ocr(cell_coordinates):
 
 
 def OCR(image_path, bbox):
+
     image = Image.open(image_path).convert("RGB")
     detection_transform = transforms.Compose([
         MaxResize(800),
@@ -245,6 +248,6 @@ def OCR(image_path, bbox):
 
         cell = outputs_to_objects(outputs, cropped_table.size, structure_id2label)
         cell_coordinates = get_cell_coordinates_by_row(cell)
-        data[f'table_{i}'] = apply_ocr(cell_coordinates)
+        data[f'table_{i}'] = apply_ocr(cell_coordinates, cropped_table)
         
     return data, cropped_table_list

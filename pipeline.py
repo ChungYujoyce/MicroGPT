@@ -10,7 +10,12 @@ from utils import get_embeddings
 import uuid
 import json
 import argparse
+import time
 import hashlib
+from tqdm.contrib.concurrent import process_map 
+from tqdm import tqdm
+import threading
+
 
 from constants import (
     CHROMA_SETTINGS,
@@ -20,28 +25,51 @@ from constants import (
     PERSIST_DIRECTORY,
 )
 
-            
 
-def main(args):
-        
+parser = argparse.ArgumentParser(description="DB management")
+
+parser.add_argument("--device_type", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to run on. (Default is cuda)")
+parser.add_argument('--source_dir', type=str, default="SOURCE_DOCUMENTS")
+parser.add_argument('--parse_dir', type=str, default="PARSED_DOCUMENTS")
+parser.add_argument("--threads", type=int, default=12)
+
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
+)
+args = parser.parse_args()
+
+
+def main():
+    def process_page(idx, file):
+        file_name = file['filename']
+        source_file_path = file['source_file_path']
+        table_dict, text_dict = dict(), dict()
+        try:
+            table_dict, text_dict = pdf_prep(args.parse_dir, file_name, source_file_path)
+        except:
+            print(f"File {file_name} has error")
+
+        paragraph_path = f'{args.parse_dir}/{file_name}/paragraphs'
+        Path(paragraph_path).mkdir(parents=True, exist_ok=True)
+        docs = text_to_chunk(table_dict, text_dict, paragraph_path, file_name)
+        return docs
+    
     parse_dir = args.parse_dir
     source_dir = args.source_dir
-    
     Path(parse_dir).mkdir(parents=True, exist_ok=True)
+    
+    files = [f for f in os.listdir(source_dir) if '.pdf' in f]
+    files_mapping = []
+    for file in files:
+        files_mapping.append({
+            'filename': os.path.splitext(file)[0],
+            'source_file_path': os.path.join(source_dir, file)
+        })
 
     doc_list = []
-    for root, _, files in os.walk(source_dir):
-        for file in files:
-            file_name = os.path.splitext(file)[0]
-            source_file_path = os.path.join(root, file)
-
-            table_dict, text_dict = pdf_prep(parse_dir, file_name, source_file_path)
-
-            paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
-            logging.info(f"==============================>{file_name}")
-            Path(paragraph_path).mkdir(parents=True, exist_ok=True)
-            doc_list += text_to_chunk(table_dict, text_dict, paragraph_path, file_name)
-    
+    for idx, file in enumerate(tqdm(files_mapping)):
+        doc_list += process_page(idx, file)    
+            
     doc_ids = []
     doc_sources = []
     for d in doc_list:
@@ -63,21 +91,9 @@ def main(args):
     with open(f'{PERSIST_DIRECTORY}/mapping.json', 'w') as f:
         json.dump({_id:source for _id, source in zip(doc_ids, doc_sources)}, f, indent=4)
 
-    # move the contents in tmp folders to original one and delete after the updates
-        
     
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="DB management")
-
-    parser.add_argument("--device_type", type=str, default="cuda" if torch.cuda.is_available() else "cpu", help="Device to run on. (Default is cuda)")
-    parser.add_argument('--source_dir', type=str, default="SOURCE_DOCUMENTS")
-    parser.add_argument('--parse_dir', type=str, default="PARSED_DOCUMENTS")
-
-    logging.basicConfig(
-        format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
-    )
-    args = parser.parse_args()
-    main(args)
+    main()
 
 
 

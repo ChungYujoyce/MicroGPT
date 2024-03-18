@@ -7,6 +7,7 @@
     <!-- Bootstrap CSS -->
 
     <link rel="icon" type="image" href="static\social_icons\favicon.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="static\dependencies\jquery\3.6.0\jquery.min.js"></script>
     <script src="static\dependencies\bootstrap-5.1.3-dist\js\bootstrap.min.js"></script>
     <script src="{{url_for('static', filename='utils.js')}}"></script>
@@ -41,21 +42,21 @@
               >
                 <button
                   type="button"
-                  class="tutorial_button"
+                  class="tutorial-icon"
                   data-bs-toggle="modal"
                   data-bs-target="#tutorial_modal"
                 >
-                  Tutorial
+                <i class="fas fa-question-circle"></i>
                 </button>
-                <i class="bx bxs-map"></i>
+                <!-- <i class="bx bxs-map"></i> -->
                 <input
                   type="text"
                   name="user_prompt"
                   id="searchInput"
                   placeholder="Tell a summary of what you want to know? 0.1 version for internal test"
                 />
-                <button type="button" onclick="submitPromptForm()">
-                  Search
+                <button type="button" class="search-icon" onclick="submitPromptForm()" aria-label="Search">
+                  <i class="fa fa-search"></i> <!-- Font Awesome search icon -->
                 </button>
               </form>
               <form
@@ -71,12 +72,8 @@
                   style="display: none"
                   multiple
                 />
-                <button
-                  type="button"
-                  class="upload_button"
-                  onclick="openFileSelection()"
-                >
-                  Upload
+                <button type="button" class="upload-icon" onclick="openFileSelection()" aria-label="Upload">
+                  <i class="fa fa-upload"></i>
                 </button>
               </form>
             </div>
@@ -254,14 +251,14 @@
             <ul>
               <li>
                 Click
-                <span style="background-color: #ff0059; color: white">Add</span> if
+                <span style="background-color: #1a700a; color: white">Add</span> if
                 you want to add the documents selected to your pre-existing
                 knowledge base.
               </li>
               <br />
               <li>
                 Click
-                <span style="background-color: #ff0059; color: white">Reset</span>
+                <span style="background-color: #1a700a; color: white">Reset</span>
                 if you want to reset your knowledge base, and then use your new
                 documents as your new knowledge base.
               </li>
@@ -414,16 +411,16 @@
             >
               1. To upload documents for the app to ingest as its new knowledge
               base click the
-              <span style="background-color: #ff0059; color: white">Upload</span>
+              <span style="background-color: #1a700a; color: white">Upload</span>
               button.
               <br />
               2. Select the documents you want to serve as your new knowledge
               base to converse with.
               <br />
               3. Then you will be prompted with a confirmation to either
-              <span style="background-color: #ff0059; color: white">Add</span> the
+              <span style="background-color: #1a700a; color: white">Add</span> the
               documents to your knowledge base,
-              <span style="background-color: #ff0059; color: white">Reset</span>
+              <span style="background-color: #1a700a; color: white">Reset</span>
               your knowledge base with the documents you just selected, or
               <span style="background-color: gray; color: white">Cancel</span>
               the upload.
@@ -466,7 +463,7 @@
               >
               <br />
               3. Hit enter on your keyboard or click
-              <span style="background-color: #ff0059; color: white">Search</span>
+              <span style="background-color: #1a700a; color: white">Search</span>
               <br />
               4. Wait while the LLM model consumes the prompt and prepares the
               answer.

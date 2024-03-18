@@ -9,7 +9,7 @@
     }
     /* Set the input box size and center it */
     #editInput {
-            width: 80%;
+            width: 100%;
             height: 200px; /* Increase height */
             resize: vertical; /* Allow vertical resizing */
             display: block;
@@ -47,7 +47,7 @@
     } 
 
     .search {
-      width: 100%;
+      width: 80%;
       box-shadow:
         inset 0 1px 1px rgba(0, 0, 0, 0.075),
         0 0 8px rgba(0, 203, 110, 0.8);
@@ -70,8 +70,8 @@
       height: 45px;
       border: none;
       width: 100%;
-      padding-left: 100px;
-      padding-right: 200px;
+      padding-left: calc(50px + 20px); 
+      padding-right: 100px;
     }
 
     .search-2 input:focus {
@@ -80,43 +80,42 @@
       outline: none;
     }
 
-    .search-2 i {
+    .search-2 .search-icon {
       position: absolute;
-      top: 12px;
-      left: -10px;
-      font-size: 24px;
-      color: #eee;
-    }
-
-    .search-2 button {
-      position: absolute;
-      right: 100px;
-      top: 0px;
-      border: none;
+      top: 0;
+      right: 45px; /* Adjust position to align button properly */
       height: 45px;
+      width: 40px; /* Adjust button width as needed */
+      border: none;
       background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
-      width: 90px;
       border-radius: 4px;
     }
 
-    .search-2 button:hover {
-      background: rgba(0, 203, 110, 0.8);
-      color: #ffffff;
+    /* Hover effect for the icon button */
+    .search-2 .search-icon:hover {
+      color: #07a84d; /* Change color on hover */
       transition: all 0.2s ease;
       cursor: pointer;
     }
 
-    .search-2 .upload_button {
+    .search-2 .upload-icon {
       position: absolute;
-      right: 1px;
-      top: 0px;
-      border: none;
+      top: 0;
+      right: 0; /* Adjust position to align button properly */
       height: 45px;
+      width: 40px; /* Adjust button width as needed */
+      border: none;
       background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
-      width: 90px;
       border-radius: 4px;
+    }
+
+    /* Hover effect for the icon button */
+    .search-2 .upload-icon:hover {
+      color: #07a84d; /* Change color on hover */
+      transition: all 0.2s ease;
+      cursor: pointer;
     }
 
     .cancel_button {
@@ -197,27 +196,26 @@
       cursor: pointer;
     }
 
-    .search-2 .tutorial_button {
+    .tutorial-icon {
       position: absolute;
       left: 1px;
       top: 0px;
-      border: none;
       height: 45px;
+      width: 40px;
+      border: none;
       background-color: rgba(0, 203, 110, 0.8);
       color: #fff;
-      width: 90px;
       border-radius: 4px;
     }
 
-    .tutorial_button:hover {
-      background: rgba(0, 203, 110, 0.8);
-      color: #ffffff;
+    .tutorial-icon:hover {
+      color: #07a84d; /* Change color on hover */
       transition: all 0.2s ease;
       cursor: pointer;
     }
 
     .form-control:focus {
-      border-color: #bc13cf;
+      border-color: #1a700a;
       box-shadow:
         inset 0 1px 1px rgba(0, 0, 0, 0.075),
         0 0 8px rgba(7, 222, 189, 0.6);
@@ -229,7 +227,7 @@
       }
 
       .search-2 input {
-        padding-left: 34px;
+        padding-left: 10px;
       }
 
       .search-2 button {
@@ -251,17 +249,35 @@
         height: 45px;
         border: none;
         width: 100%;
-        padding-left: 100px;
-        padding-right: 200px;
+        padding-left: calc(50px + 20px);
+        padding-right: 100px;
       }
 
       .default_button {
         height: 37px;
+        width: 55px;
       }
 
       .cancel_button {
         height: 37px;
+        width: 55px;
       }
+
+      .reviseButton {
+        height: 37px;
+        width: 55px;
+      }
+
+      .deleteButton {
+        height: 37px;
+        width: 55px;
+      }
+
+      .saveButton {
+        height: 37px;
+        width: 55px;
+      }
+
     }
 
     .accordion-button:focus {
@@ -272,6 +288,6 @@
 
     .accordion-button:not(.collapsed) {
       color:rgba(0, 203, 110, 0.8);
-      background-color: #f5b3cb;
+      background-color: #1a700a;
       box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.125);
     }

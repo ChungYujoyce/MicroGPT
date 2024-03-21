@@ -30,7 +30,7 @@ CHROMA_SETTINGS = Settings(
 )
 
 # Context Window and Max New Tokens
-CONTEXT_WINDOW_SIZE = 32768
+CONTEXT_WINDOW_SIZE = 4096 #32768
 MAX_NEW_TOKENS = CONTEXT_WINDOW_SIZE  # int(CONTEXT_WINDOW_SIZE/4)
 
 #### If you get a "not enough space in the buffer" error, you should reduce the values below, start with half of the original values and keep halving the value until the error stops appearing
@@ -46,16 +46,16 @@ N_BATCH = 512
 # https://python.langchain.com/en/latest/_modules/langchain/document_loaders/excel.html#UnstructuredExcelLoader
 DOCUMENT_MAP = {
     # ".html": UnstructuredHTMLLoader,
-    # ".txt": TextLoader,
+    ".txt": TextLoader,
     # ".md": UnstructuredMarkdownLoader,
     # ".py": TextLoader,
-    ".pdf": PyPDFLoader,
+    # ".pdf": PyPDFLoader,
     # ".pdf": UnstructuredFileLoader,
-    # ".csv": CSVLoader,
+    ".csv": CSVLoader,
     # ".xls": UnstructuredExcelLoader,
-    # ".xlsx": UnstructuredExcelLoader,
-    # ".docx": Docx2txtLoader,
-    # ".doc": Docx2txtLoader,
+    ".xlsx": UnstructuredExcelLoader,
+    ".docx": Docx2txtLoader,
+    ".doc": Docx2txtLoader,
 }
 
 # Default Instructor Model
@@ -101,8 +101,8 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-xl" # Uses 5 GB of VRAM (Most Accurate
 # MODEL_ID = "TheBloke/Llama-2-13b-Chat-GGUF"
 # MODEL_BASENAME = "llama-2-13b-chat.Q4_K_M.gguf"
 
-# MODEL_ID = "TheBloke/Llama-2-7b-Chat-GGUF"
-# MODEL_BASENAME = "llama-2-7b-chat.Q4_K_M.gguf"
+MODEL_ID = "TheBloke/Llama-2-7b-Chat-GGUF"
+MODEL_BASENAME = "llama-2-7b-chat.Q4_K_M.gguf"
 
 # MODEL_ID = "TheBloke/Mistral-7B-Instruct-v0.1-GGUF"
 # MODEL_BASENAME = "mistral-7b-instruct-v0.1.Q8_0.gguf"
@@ -121,8 +121,8 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-xl" # Uses 5 GB of VRAM (Most Accurate
 # MODEL_ID = "TheBloke/Wizard-Vicuna-7B-Uncensored-HF"
 # MODEL_ID = "TheBloke/guanaco-7B-HF"
 # MODEL_ID = 'NousResearch/Nous-Hermes-13b' # Requires ~ 23GB VRAM. Using STransformers
-MODEL_ID='mistralai/Mixtral-8x7B-Instruct-v0.1'
-MODEL_BASENAME=None
+# MODEL_ID='mistralai/Mixtral-8x7B-Instruct-v0.1'
+# MODEL_BASENAME=None
 # alongside will 100% create OOM on 24GB cards.
 # llm = load_model(device_type, model_id=model_id)
 

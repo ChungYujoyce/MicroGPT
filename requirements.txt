@@ -27,6 +27,7 @@ click
 flask
 requests
 pdfplumber
+docx2txt
 
 # Streamlit related
 streamlit

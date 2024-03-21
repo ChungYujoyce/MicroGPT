@@ -4,8 +4,10 @@ import shutil
 import torch
 from pathlib import Path
 from pdf_prep import pdf_prep
-from chunk_prep import text_to_chunk
+from chunk_prep import text_to_chunk, text_to_chunk_non_pdf
 from langchain.vectorstores import Chroma
+from langchain.docstore.document import Document
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from utils import get_embeddings
 import uuid
 import json
@@ -39,10 +41,84 @@ logging.basicConfig(
 args = parser.parse_args()
 
 
+def load_single_document(file_path: str) -> Document:
+    # Loads a single document from a file path
+    try:
+        file_extension = os.path.splitext(file_path)[1]
+        loader_class = DOCUMENT_MAP.get(file_extension)
+        if loader_class:
+            loader = loader_class(file_path)
+        else:
+            raise ValueError("Document type is undefined")
+        return loader.load()[0]
+    except Exception as ex:
+        print("%s loading error: \n%s" % (file_path, ex))
+        return None
+
+
+def load_document_batch(filepaths):
+    logging.info("Loading document batch")
+    # create a thread pool
+    with ThreadPoolExecutor(len(filepaths)) as exe:
+        # load files
+        futures = [exe.submit(load_single_document, name) for name in filepaths]
+        # collect data
+        if futures is None:
+            file_log(name + " failed to submit")
+            return None
+        else:
+            data_list = [future.result() for future in futures]
+            # return data and file paths
+            return (data_list, filepaths)
+
+
+def load_documents(source_dir: str) -> list[Document]:
+    # Loads all documents from the source documents directory
+    paths = []
+    for root, _, files in os.walk(source_dir):
+        for file_name in files:
+            file_extension = os.path.splitext(file_name)[1]
+            # only process files that are not pdfs
+            if '.pdf' != file_extension:
+                print("Importing: " + file_name)
+                source_file_path = os.path.join(root, file_name)
+                if file_extension in DOCUMENT_MAP.keys():
+                    paths.append(source_file_path)
+    # Have at least one worker and at most INGEST_THREADS workers
+    n_workers = min(INGEST_THREADS, max(len(paths), 1))
+    chunksize = round(len(paths) / n_workers)
+    docs = []
+    with ProcessPoolExecutor(n_workers) as executor:
+        futures = []
+        # split the load operations into chunks
+        for i in range(0, len(paths), chunksize):
+            # select a chunk of filenames
+            filepaths = paths[i : (i + chunksize)]
+            # submit the task
+            try:
+                future = executor.submit(load_document_batch, filepaths)
+            except Exception as ex:
+                file_log("executor task failed: %s" % (ex))
+                future = None
+            if future is not None:
+                futures.append(future)
+        # process all results
+        for future in as_completed(futures):
+            # open the file and load the data
+            try:
+                contents, _ = future.result()
+                docs.extend(contents)
+            except Exception as ex:
+                file_log("Exception: %s" % (ex))
+
+    return docs
+
+
 def main():
     def process_page(idx, file):
         file_name = file['filename']
         source_file_path = file['source_file_path']
+
         table_dict, text_dict = dict(), dict()
         try:
             table_dict, text_dict = pdf_prep(args.parse_dir, file_name, source_file_path)
@@ -58,6 +134,7 @@ def main():
     source_dir = args.source_dir
     Path(parse_dir).mkdir(parents=True, exist_ok=True)
     
+    # pdf parsing
     files = [f for f in os.listdir(source_dir) if '.pdf' in f]
     files_mapping = []
     for file in files:
@@ -69,6 +146,21 @@ def main():
     doc_list = []
     for idx, file in enumerate(tqdm(files_mapping)):
         doc_list += process_page(idx, file)    
+
+
+    # non-pdf parsing
+    documents = load_documents(source_dir)
+    files = [f for f in os.listdir(source_dir) if '.pdf' not in f]
+
+    for doc, file in zip(documents, files):
+        file_name = os.path.splitext(file)[0]
+        text = doc.page_content
+        try:
+            paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
+            Path(paragraph_path).mkdir(parents=True, exist_ok=True)
+            doc_list += text_to_chunk_non_pdf(text, paragraph_path, file_name)
+        except:
+            print(f"File {file_name} has error")
             
     doc_ids = []
     doc_sources = []

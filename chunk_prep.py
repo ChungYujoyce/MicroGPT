@@ -66,4 +66,20 @@ def text_to_chunk(table_dict, text_dict, dis_dir, file_name) -> Document:
     return docs
 
 
+def text_to_chunk_non_pdf(text, dis_dir, file_name) -> Document:
+    chunks = []
+    chunks += split_contexts(text, chunk_size=300, overlap=False)
+
+    docs = []
+    for i in range(len(chunks)):
+        chunk = re.sub(r'\n{3,}', '\n\n', chunks[i]).strip()
+        c = f'{file_name.upper()}\n' + chunk
+        with open(f'{dis_dir}/chunk_{i+1}.txt', 'w', encoding='utf-8') as f:
+            f.write(c)
+        
+        # transform txt chunks into langchain Document type
+        doc = Document(page_content=c, metadata={"source": f'{dis_dir}/chunk_{i+1}.txt'})
+        docs.append(doc)
+    
+    return docs
 

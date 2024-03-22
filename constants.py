@@ -45,17 +45,17 @@ N_BATCH = 512
 
 # https://python.langchain.com/en/latest/_modules/langchain/document_loaders/excel.html#UnstructuredExcelLoader
 DOCUMENT_MAP = {
-    # ".html": UnstructuredHTMLLoader,
-    # ".txt": TextLoader,
-    # ".md": UnstructuredMarkdownLoader,
+    ".html": UnstructuredHTMLLoader,
+    ".txt": TextLoader,
+    ".md": UnstructuredMarkdownLoader,
     # ".py": TextLoader,
-    ".pdf": PyPDFLoader,
+    # ".pdf": PyPDFLoader,
     # ".pdf": UnstructuredFileLoader,
-    # ".csv": CSVLoader,
-    # ".xls": UnstructuredExcelLoader,
-    # ".xlsx": UnstructuredExcelLoader,
-    # ".docx": Docx2txtLoader,
-    # ".doc": Docx2txtLoader,
+    ".csv": CSVLoader,
+    ".xls": UnstructuredExcelLoader,
+    ".xlsx": UnstructuredExcelLoader,
+    ".docx": Docx2txtLoader,
+    ".doc": Docx2txtLoader,
 }
 
 # Default Instructor Model

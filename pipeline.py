@@ -4,10 +4,8 @@ import shutil
 import torch
 from pathlib import Path
 from pdf_prep import pdf_prep
-from chunk_prep import text_to_chunk, text_to_chunk_non_pdf
+from chunk_prep import text_to_chunk
 from langchain.vectorstores import Chroma
-from langchain.docstore.document import Document
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from utils import get_embeddings
 import uuid
 import json
@@ -17,7 +15,7 @@ import hashlib
 from tqdm.contrib.concurrent import process_map 
 from tqdm import tqdm
 import threading
-from ingest import load_single_document, load_document_batch, load_documents 
+
 
 from constants import (
     CHROMA_SETTINGS,
@@ -45,7 +43,6 @@ def main():
     def process_page(idx, file):
         file_name = file['filename']
         source_file_path = file['source_file_path']
-
         table_dict, text_dict = dict(), dict()
         try:
             table_dict, text_dict = pdf_prep(args.parse_dir, file_name, source_file_path)
@@ -61,7 +58,6 @@ def main():
     source_dir = args.source_dir
     Path(parse_dir).mkdir(parents=True, exist_ok=True)
     
-    # pdf parsing
     files = [f for f in os.listdir(source_dir) if '.pdf' in f]
     files_mapping = []
     for file in files:
@@ -73,21 +69,6 @@ def main():
     doc_list = []
     for idx, file in enumerate(tqdm(files_mapping)):
         doc_list += process_page(idx, file)    
-
-
-    # non-pdf parsing
-    documents = load_documents(source_dir)
-    files = [f for f in os.listdir(source_dir) if '.pdf' not in f]
-
-    for doc, file in zip(documents, files):
-        file_name = os.path.splitext(file)[0]
-        text = doc.page_content
-        try:
-            paragraph_path = f'{parse_dir}/{file_name}/paragraphs'
-            Path(paragraph_path).mkdir(parents=True, exist_ok=True)
-            doc_list += text_to_chunk_non_pdf(text, paragraph_path, file_name)
-        except:
-            print(f"File {file_name} has error")
             
     doc_ids = []
     doc_sources = []

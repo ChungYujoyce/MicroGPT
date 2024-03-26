@@ -70,6 +70,7 @@ DB = None
 RETRIEVER = None
 RETRIEVER_BM25 = None
 QA = None
+db_manager = None
 
 def load_DB():
     global DB
@@ -77,6 +78,7 @@ def load_DB():
     global RETRIEVER_BM25
     global QA
     global app
+    global db_manager
     # load the vectorstore
     
     # Return document size
@@ -107,13 +109,13 @@ def load_DB():
             "prompt": prompt,
         },
     )
+    
+    db_manager = DB_Management(f'{PERSIST_DIRECTORY}/mapping.json', PERSIST_DIRECTORY)
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO) 
 load_DB()
 
-# DB object init
-db_manager = DB_Management(f'{PERSIST_DIRECTORY}/mapping.json', PERSIST_DIRECTORY)
 
 @app.route("/api/delete_source", methods=["DELETE"])
 def delete_source_route():
@@ -176,13 +178,12 @@ def run_delete():
         # Cheng-Ping Love you very much.
         global request_lock  # Make sure to use the global lock instance
         _id = request.form.get("id")
-        # _id = os.path.join("PARSED_DOCUMENTS", _id)
         app.logger.info(_id)
-        
+
         with request_lock:
             db_manager.delete_text(_id)
-
-        load_DB()
+        
+         load_DB()
         return "Script executed successfully", 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500
@@ -199,7 +200,7 @@ def run_update():
         
         with request_lock:
             db_manager.update_text(_id, revise_result.strip())
-
+        
         load_DB()
         return "Script executed successfully", 200
     except Exception as e:

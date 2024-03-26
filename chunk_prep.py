@@ -58,9 +58,13 @@ def text_to_chunk(table_dict, text_dict, dis_dir, file_name) -> Document:
         c = f'{file_name.upper()}\n' + chunk
         with open(f'{dis_dir}/chunk_{i+1}.txt', 'w', encoding='utf-8') as f:
             f.write(c)
-        
+
+        dis_dir2 = dis_dir
+        # chroma metadata should be still "PARSED_DOCUMENTS" as "PARSED_TMP" would be deleted.
+        if "PARSED_TMP" in dis_dir:
+            dis_dir2 = dis_dir.replace("PARSED_TMP", "PARSED_DOCUMENTS")
         # transform txt chunks into langchain Document type
-        doc = Document(page_content=c, metadata={"source": f'{dis_dir}/chunk_{i+1}.txt'})
+        doc = Document(page_content=c, metadata={"source": f'{dis_dir2}/chunk_{i+1}.txt'})
         docs.append(doc)
 
     return docs
@@ -77,8 +81,10 @@ def text_to_chunk_non_pdf(text, dis_dir, file_name) -> Document:
         with open(f'{dis_dir}/chunk_{i+1}.txt', 'w', encoding='utf-8') as f:
             f.write(c)
         
-        # transform txt chunks into langchain Document type
-        doc = Document(page_content=c, metadata={"source": f'{dis_dir}/chunk_{i+1}.txt'})
+        dis_dir2 = dis_dir
+        if "PARSED_TMP" in dis_dir:
+            dis_dir2 = dis_dir.replace("PARSED_TMP", "PARSED_DOCUMENTS")
+        doc = Document(page_content=c, metadata={"source": f'{dis_dir2}/chunk_{i+1}.txt'})
         docs.append(doc)
     
     return docs

@@ -102,22 +102,7 @@ def load_documents(paths: list[str]) -> list[Document]:
     return docs
 
 
-def main():
-    # def process_page(idx, file):
-    #     file_name = file['filename']
-    #     source_file_path = file['source_file_path']
-
-    #     table_dict, text_dict = dict(), dict()
-    #     try:
-    #         table_dict, text_dict = pdf_prep(args.parse_dir, file_name, source_file_path)
-    #     except:
-    #         print(f"File {file_name} has error")
-
-    #     paragraph_path = f'{args.parse_dir}/{file_name}/paragraphs'
-    #     Path(paragraph_path).mkdir(parents=True, exist_ok=True)
-    #     docs = text_to_chunk(table_dict, text_dict, paragraph_path, file_name)
-    #     return docs
-    
+def main():    
     parse_dir = args.parse_dir
     source_dir = args.source_dir
     Path(parse_dir).mkdir(parents=True, exist_ok=True)
@@ -158,20 +143,6 @@ def main():
                 doc_list += text_to_chunk_non_pdf(text, paragraph_path, file_name)
             except:
                 print(f"File {file_name} has error")
-
-    # pdf parsing
-    # files = [f for f in os.listdir(source_dir) if '.pdf' in f]
-    # files_mapping = []
-    # for file in files:
-    #     files_mapping.append({
-    #         'filename': os.path.splitext(file)[0],
-    #         'source_file_path': os.path.join(source_dir, file)
-    #     })
-
-    # doc_list = []
-    # for idx, file in enumerate(tqdm(files_mapping)):
-    #     doc_list += process_page(idx, file)
-
             
     doc_ids = []
     doc_sources = []
@@ -196,7 +167,6 @@ def main():
         if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
             with open(file_path, 'r') as f:
                 mapping = json.load(f)
-            doc_sources = [doc.replace("PARSED_TMP", "PARSED_DOCUMENTS") for doc in doc_sources if "PARSED_TMP" in doc]
             mapping.update({_id:source for _id, source in zip(doc_ids, doc_sources)})
         else:
             mapping = {_id:source for _id, source in zip(doc_ids, doc_sources)}

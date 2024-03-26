@@ -271,7 +271,7 @@ function deleteString(button, id, url) {
 
 function openFileSelection() {
   const fileInput = document.getElementById("fileInput");
-  fileInput.accept = ".csv, .pdf, .txt, .doc";
+  fileInput.accept = ".csv, .pdf, .txt, .doc, .docx";
   fileInput.click();
   fileInput.addEventListener("change", handleFileSelection);
 }

@@ -113,7 +113,7 @@ def load_DB():
     db_manager = DB_Management(f'{PERSIST_DIRECTORY}/mapping.json', PERSIST_DIRECTORY)
 
 app = Flask(__name__)
-app.logger.setLevel(logging.INFO) 
+app.logger.setLevel(logging.INFO)
 load_DB()
 
 
@@ -183,7 +183,7 @@ def run_delete():
         with request_lock:
             db_manager.delete_text(_id)
         
-         load_DB()
+        load_DB()
         return "Script executed successfully", 200
     except Exception as e:
         return f"Error occurred: {str(e)}", 500

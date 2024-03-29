@@ -15,6 +15,10 @@ app.secret_key = "LeafmanZSecretKey"
 API_HOST = "http://localhost:5110/api"
 
 
+@app.route('/admin_page')
+def admin_page():
+    return render_template('admin.html')
+
 # PAGES #
 @app.route("/", methods=["GET", "POST", "PUT", "DELETE"])
 def home_page():

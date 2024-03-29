@@ -22,6 +22,19 @@
         display: none;
         float: right; /* Align to the right */
     }
+
+    .admin_button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 9999; /* Ensure it appears on top of other elements */
+      border: none;
+      height: 45px;
+      background-color: rgba(0, 203, 110, 0.8);
+      color: #fff;
+      width: 90px;
+      border-radius: 4px;
+    }
     
     /* Clearfix to ensure save button appears below input box */
     .clearfix::after {

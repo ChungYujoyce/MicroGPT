@@ -5,7 +5,7 @@ import subprocess
 import argparse
 
 import torch
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 

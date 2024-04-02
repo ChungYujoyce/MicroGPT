@@ -237,14 +237,16 @@ function saveContent(button, id) {
 
 function deleteString(button, id, url) {
     event.preventDefault();
+
     $('#confirmationModal').modal('show');
+    $('#confirmAction').off('click');
     $('#confirmAction').on('click', function() {
         var listItem = button.parentNode.parentNode;
-        listItem.parentNode.removeChild(listItem);
-
+        listItem.remove();
+        
+        var formData = new FormData();
         // id 
         // editedString
-        var formData = new FormData();
         formData.append("deleteInput", true);
         formData.append("id", id);
 

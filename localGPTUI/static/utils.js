@@ -1,8 +1,7 @@
 function isTableLine(line) {
-        // Check if the line contains the pipe character '|'
-        return line.includes('|');
-    }
-
+    // Check if the line contains the pipe character '|'
+    return line.includes('|');
+}
 
 function displayTextInTable(button, text) {
     
@@ -84,10 +83,11 @@ function getRevisedContent(button) {
             // Add a newline character below the table
             revisedContent += '\n\n';
         } else {
-            // If the node is not a table, add its text content to the revised content string
-            let text_content = node.innerHTML.replace(/<br\s*\/?>/gi, "\n");
-            revisedContent += text_content
-            revisedContent += '\n';
+            let text_content = node.textContent.trim().replace(/<br\s*\/?>/gi, "\n");
+            if (text_content !== '&nbsp;') {
+                revisedContent += text_content;
+                revisedContent += '\n';
+            }
         }
     });
     revisedContent = revisedContent.replace(/\n{3,}/g, "\n\n");
@@ -110,6 +110,7 @@ function toggleEditing(button) {
     if (!isEditable) {
         originalContent = contentDiv.innerHTML; // Store the original content
         contentDiv.setAttribute('contenteditable', 'true'); // Make content editable
+        contentDiv.style.display = "block";
         contentDiv.focus(); // Put focus on the contentDiv for immediate editing
         reviseButton.textContent = 'Cancel';
         saveButton.style.display = 'inline-block';
@@ -156,84 +157,6 @@ function saveContent(button, id) {
         console.error("Error submitting form:", error.message);
     });
 }
-
-// Function to enable editing of the clicked string
-// function editString(button) {
-//   $('#confirmationModal').modal('show');
-//   $('#confirmAction').on('click', function() {
-//     var listItem = button.parentNode;
-
-//     // Get the <span> element containing the string
-//     var spanElement = listItem.querySelector("span");
-
-//     // Display input field with the current string value
-//     var stringValue = spanElement.textContent;
-//     var editInput = document.getElementById("editInput");
-//     editInput.value = stringValue;
-//     editInput.style.display = "block";
-//     editInput.focus();
-
-//     // Hide the <span> element and the "Revise" button
-//     spanElement.style.display = "none";
-//     button.style.display = "none";
-
-//     // Display the save button associated with the edited string
-//     var saveButton = listItem.querySelector(".saveButton");
-//     saveButton.style.display = "inline-block";
-
-//     // Close the modal
-//     $('#confirmationModal').modal('hide');
-//   });
-// }
-
-// // Function to save the edited string
-// function saveEditedString(button, id) {
-//     event.preventDefault();
-
-//     var listItem = button.parentNode;
-
-//     // Get the edited string from the input field
-//     var editedString = document.getElementById("editInput").value;
-
-//     // Update the <span> element with the new value
-//     var spanElement = listItem.querySelector("span");
-//     spanElement.textContent = editedString;
-
-//     // Hide the input field and save button
-//     var editInput = document.getElementById("editInput");
-//     editInput.style.display = "none";
-//     button.style.display = "none";
-
-//     // Show the <span> element and "Revise" button
-//     spanElement.style.display = "block";
-//     var reviseButton = listItem.querySelector(".reviseButton");
-//     reviseButton.style.display = "inline-block";
-
-//     // id 
-//     // editedString
-//     var form = document.getElementById("dataForm");
-//     var formData = new FormData();
-//     formData.append("editInput", true);
-//     formData.append("id", id);
-//     formData.append("revise_result", editedString);
-
-//     // Fetch API to submit the form data
-//     fetch(form.action, {
-//         method: "PUT",
-//         body: formData
-//     })
-//     .then(response => {
-//         if (!response.ok) {
-//             throw new Error("Network response was not ok");
-//         }
-//         // Handle success response if needed
-//         console.log("Form submitted successfully");
-//     })
-//     .catch(error => {
-//         // Handle error if needed
-//         console.error("Error submitting form:", error.message);
-//     });
-// }
 
 function deleteString(button, id, url) {
     event.preventDefault();

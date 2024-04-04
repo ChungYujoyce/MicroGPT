@@ -67,9 +67,9 @@ function getRevisedContent(button) {
             node.querySelectorAll('tr').forEach(row => {
                 // Loop through the cells of each row
                 row.querySelectorAll('td, th').forEach((cell, index) => {
-                    // Add the cell content to the revised content string
-                    revisedContent += cell.innerHTML.replace(/<br\s*\/?>/gi, " ").trim();
 
+                    // Add the cell content to the revised content string
+                    revisedContent += cell.innerText.replace(/\s+/g, " ").trim();
                     // Add "|" if it's not the last cell in the row
                     if (index < row.cells.length - 1) {
                         revisedContent += ' | ';
@@ -83,11 +83,8 @@ function getRevisedContent(button) {
             // Add a newline character below the table
             revisedContent += '\n\n';
         } else {
-            let text_content = node.textContent.trim().replace(/<br\s*\/?>/gi, "\n");
-            if (text_content !== '&nbsp;') {
-                revisedContent += text_content;
-                revisedContent += '\n';
-            }
+            revisedContent += node.innerText.replace(/\s+/g, " ").trim();
+            revisedContent += '\n';
         }
     });
     revisedContent = revisedContent.replace(/\n{3,}/g, "\n\n");

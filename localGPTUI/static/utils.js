@@ -3,51 +3,52 @@ function isTableLine(line) {
     return line.includes('|');
 }
 
-function displayTextInTable(button, text) {
-    
-    var parentDiv = button.parentNode.parentNode;
-    var contentDiv = parentDiv.querySelector("span");
 
+function convertTabletext2Html(contentDiv, text) {
     const lines = text.split('\n');
     let inTable = false; // flag to check if we're currently in the table
-    if (contentDiv.children.length === 0) {
-        contentDiv.innerHTML = ''; // Clear existing content
-        lines.forEach((line, index) => {
-            if (isTableLine(line)) {
-                if (!inTable) {
-                    inTable = true; // we're entering the table
-                    const table = document.createElement('table');
-                    table.className = 'table table-bordered'; // Bootstrap table style
-                    const row = document.createElement(index === 0 ? 'thead' : 'tr');
-                    const cells = line.split('|').map(cell => cell.trim());
-                    cells.forEach(cell => {
-                        const element = index === 0 ? 'th' : 'td';
-                        const td = document.createElement(element);
-                        td.textContent = cell;
-                        row.appendChild(td);
-                    });
-                    table.appendChild(row);
-                    contentDiv.appendChild(table);
-                } else {
-                    const row = document.createElement('tr');
-                    const cells = line.split('|').map(cell => cell.trim());
-                    cells.forEach(cell => {
-                        const td = document.createElement('td');
-                        td.textContent = cell;
-                        row.appendChild(td);
-                    });
-                    contentDiv.lastChild.appendChild(row);
-                }
+    contentDiv.innerHTML = ''; // Clear existing content
+    lines.forEach((line, index) => {
+        if (isTableLine(line)) {
+            if (!inTable) {
+                inTable = true; // we're entering the table
+                const table = document.createElement('table');
+                table.className = 'table table-bordered'; // Bootstrap table style
+                const row = document.createElement(index === 0 ? 'thead' : 'tr');
+                const cells = line.split('|').map(cell => cell.trim());
+                cells.forEach(cell => {
+                    const element = index === 0 ? 'th' : 'td';
+                    const td = document.createElement(element);
+                    td.textContent = cell;
+                    row.appendChild(td);
+                });
+                table.appendChild(row);
+                contentDiv.appendChild(table);
             } else {
-                if (inTable) {
-                    inTable = false; // we're exiting the table
-                }
-                const div = document.createElement('div');
-                div.textContent = line;
-                contentDiv.appendChild(div);
+                const row = document.createElement('tr');
+                const cells = line.split('|').map(cell => cell.trim());
+                cells.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell;
+                    row.appendChild(td);
+                });
+                contentDiv.lastChild.appendChild(row);
             }
-        });
-    };
+        } else {
+            if (inTable) {
+                inTable = false; // we're exiting the table
+            }
+            const div = document.createElement('div');
+            div.textContent = line;
+            contentDiv.appendChild(div);
+        }
+    });
+}
+
+function displayTextInTable(button, text) {
+    var parentDiv = button.parentNode.parentNode;
+    var contentDiv = parentDiv.querySelector("span");
+    convertTabletext2Html(contentDiv, text);
 }
 
 function getRevisedContent(button) {
@@ -83,7 +84,14 @@ function getRevisedContent(button) {
             // Add a newline character below the table
             revisedContent += '\n\n';
         } else {
-            revisedContent += node.innerText.replace(/\s+/g, " ").trim();
+            var htmlContent = node.innerHTML;
+            htmlContent = htmlContent.replace(/<br\s*\/?>/ig, '\n');
+            htmlContent = htmlContent.replace(/&nbsp;/gi, " ");
+            htmlContent = htmlContent.replace(/<span[^>]*>.*?<\/span>/gi, '');
+            htmlContent = htmlContent.replace(/<[^>]*>/g, "");
+            htmlContent = htmlContent.replace(/\n+/g, "\n");
+            htmlContent = htmlContent.replace(/ {2,}/g, " ").trim();
+            revisedContent += htmlContent;
             revisedContent += '\n';
         }
     });
@@ -103,7 +111,7 @@ function toggleEditing(button) {
     const reviseButton = button;
     const saveButton = parentDiv.querySelector(".saveButton");
     const isEditable = contentDiv.getAttribute('contenteditable') === 'true';
-    console.log(isEditable);
+
     if (!isEditable) {
         originalContent = contentDiv.innerHTML; // Store the original content
         contentDiv.setAttribute('contenteditable', 'true'); // Make content editable
@@ -125,6 +133,7 @@ function saveContent(button, id) {
     const revisedContent = getRevisedContent(button);
     var parentDiv = button.parentNode;
     var contentDiv = parentDiv.querySelector("span");
+    convertTabletext2Html(contentDiv, revisedContent);
     contentDiv.removeAttribute('contenteditable'); // Make content non-editable
     parentDiv.querySelector(".reviseButton").textContent = 'Revise';
     button.style.display = 'none';

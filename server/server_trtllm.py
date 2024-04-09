@@ -2,6 +2,7 @@
 
 import json
 import logging
+logging.basicConfig(level=logging.INFO)
 import sys
 import json
 from pathlib import Path
@@ -243,7 +244,7 @@ class WrapperServer:
 if __name__ == "__main__":
     # TODO: can we reuse normal logger here?
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-
+    logging.info('Start server...')
     parser = ArgumentParser()
     parser.add_argument("--model_path", required=True)
     parser.add_argument("--host", type=str, default="0.0.0.0")

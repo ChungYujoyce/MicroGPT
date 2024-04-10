@@ -2,12 +2,10 @@ import requests
 import json
 
 request = {
-    "prompts": ["Hello! How are you?"],
-    "tokens_to_generate": 64,
-    "temperature": 1.0,
-    "top_k": 1,
-    "top_p": 0.0,
-    "stop_words_list": [],
+    "model": "llama2-7b-chat",
+    "messages": [{"role": "user", "content": "<s> [INST] Hello! How are you? [/INST]"}],
+    "max_tokens": 64,
+    "temperature": 0.0,
 }
 
 # Sending the PUT request

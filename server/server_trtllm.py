@@ -33,7 +33,6 @@ class TritonServerGenerate(Resource):
         repetition_penalty,
         random_seed,
         stop_words_list,
-        max_attention_window_size=None
     ):
         output = self.model.forward(
             prompts,
@@ -44,7 +43,6 @@ class TritonServerGenerate(Resource):
             repetition_penalty=repetition_penalty,
             random_seed=random_seed,
             stop_words_list=stop_words_list,
-            max_attention_window_size=max_attention_window_size,
         )
         return output
 
@@ -53,17 +51,22 @@ class TritonServerGenerate(Resource):
         logging.info(json.dumps(request.get_json()))
 
         input_request = request.get_json()
-
-        tokens_to_generate = input_request.get("tokens_to_generate", 64)
+        messages = input_request["model"]
+        
+        messages = input_request["messages"]
+        prompts = [messages[0]['content']]
+        
+        tokens_to_generate = input_request.get("max_tokens", 64)
+        random_seed = input_request.get("seed", 0)
+        stop_words_list = input_request.get("stop", [])
+        
         temperature = input_request.get("temperature", 1.0)
-        top_k = input_request.get("top_k", 0)
-        top_p = input_request.get("top_p", 1.0)
-        repetition_penalty = input_request.get("repetition_penalty", 1.2)
-        stop_words_list = input_request.get("stop_words_list")
-        max_attention_window_size = input_request.get("max_attention_window_size")
-        random_seed = input_request.get("random_seed", 0)
-        prompts = input_request["prompts"]
-
+        
+        top_p = 0.0 if temperature == 0 else input_request.get("top_p", 1.0)
+        top_k = 1 if temperature == 0 else input_request.get("top_k", 0)
+            
+        repetition_penalty = input_request.get("presence_penalty", 1.0)
+        
         data = dict(
             prompts=prompts,
             max_new_tokens=tokens_to_generate,
@@ -73,7 +76,6 @@ class TritonServerGenerate(Resource):
             repetition_penalty=repetition_penalty,
             random_seed=random_seed,
             stop_words_list=stop_words_list,
-            max_attention_window_size=max_attention_window_size,
         )
         self.comm.Barrier()
         data = self.comm.bcast(data, root=0)
@@ -181,7 +183,6 @@ class TensorRTLLM:
         repetition_penalty,
         random_seed,
         stop_words_list,
-        max_attention_window_size,
     ):
         batch_input_ids, input_lengths = parse_input(input_texts, self.tokenizer)
 
@@ -201,7 +202,6 @@ class TensorRTLLM:
                 repetition_penalty=repetition_penalty,
                 random_seed=random_seed,
                 stop_words_list=stop_words_list,
-                max_attention_window_size=max_attention_window_size,
                 return_dict=False,
             )
             torch.cuda.synchronize()

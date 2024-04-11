@@ -46,26 +46,24 @@ class TritonServerGenerate(Resource):
         )
         return output
 
-    def put(self):
+    def post(self):
         logging.info("request IP: " + str(request.remote_addr))
         logging.info(json.dumps(request.get_json()))
 
         input_request = request.get_json()
-        messages = input_request["model"]
         
-        messages = input_request["messages"]
-        prompts = [messages[0]['content']]
-        
+        model = input_request["model"]
+        prompts = input_request["prompt"]
         tokens_to_generate = input_request.get("max_tokens", 64)
         random_seed = input_request.get("seed", 0)
         stop_words_list = input_request.get("stop", [])
         
         temperature = input_request.get("temperature", 1.0)
-        
         top_p = 0.0 if temperature == 0 else input_request.get("top_p", 1.0)
-        top_k = 1 if temperature == 0 else input_request.get("top_k", 0)
-            
-        repetition_penalty = input_request.get("presence_penalty", 1.0)
+        top_k = 1 if temperature == 0 else input_request.get("top_k", 40)
+        
+        frequency_penalty = 0.0
+        repetition_penalty = 1.1
         
         data = dict(
             prompts=prompts,
@@ -81,7 +79,13 @@ class TritonServerGenerate(Resource):
         data = self.comm.bcast(data, root=0)
 
         out = self.generate(**data)
-        return jsonify(out)
+        response = {
+            "choices": [
+                {"text": o} for o in out
+            ],
+            "usage": {}
+        }
+        return jsonify(response)
 
 
 def parse_input(input_texts: str, tokenizer):
@@ -224,7 +228,7 @@ class WrapperServer:
         if self.rank == 0:
             self.app = Flask(__file__, static_url_path="")
             api = Api(self.app)
-            api.add_resource(TritonServerGenerate, "/generate", resource_class_args=[self.model])
+            api.add_resource(TritonServerGenerate, "/v1/completions", resource_class_args=[self.model])
 
     def run(self, url, port=5000):
         if self.rank == 0:

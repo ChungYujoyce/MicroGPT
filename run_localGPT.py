@@ -6,6 +6,8 @@ import utils
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.llms import HuggingFacePipeline
+from langchain_community.llms import VLLMOpenAI
+
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler  # for streaming response
 from langchain.callbacks.manager import CallbackManager
 
@@ -88,16 +90,28 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
         "text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_length=MAX_NEW_TOKENS,
-        do_sample=False,
-        # temperature=0,
-        # top_p=0.95,
+        max_tokens=MAX_NEW_TOKENS,
+        # do_sample=False,
+        temperature=0.0,
+        # top_p=0.0,
+        # top_k=1,
         # repetition_penalty=1.15,
         generation_config=generation_config,
     )
 
     local_llm = HuggingFacePipeline(pipeline=pipe)
     logging.info("Local LLM Loaded")
+
+    # local_llm = VLLMOpenAI(
+    #     openai_api_key="EMPTY",
+    #     openai_api_base="http://172.18.0.2:5000/v1",
+    #     model_name="test",
+    #     max_tokens=512,
+    #     temperature=0,
+    #     model_kwargs={
+    #         "stop": [],
+    #     },
+    # )
 
     return local_llm
 
@@ -152,7 +166,8 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
 
     # load the llm pipeline
     llm = load_model(device_type, model_id=MODEL_ID, model_basename=MODEL_BASENAME, LOGGING=logging)
-
+    import pdb
+    pdb.set_trace()
     if use_history:
         qa = RetrievalQA.from_chain_type(
             llm=llm,
@@ -168,7 +183,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
             llm=llm,
             chain_type="stuff",  # try other chains types as well. refine, map_reduce, map_rerank
             retriever=retriever,
-            retriever_bm25=retriever_bm25,
+            # retriever_bm25=retriever_bm25,
             return_source_documents=True,  # verbose=True,
             callbacks=callback_manager,
             chain_type_kwargs={
@@ -264,6 +279,7 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
         os.mkdir(MODELS_PATH)
 
     qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type='mistral' if 'mistralai' in MODEL_ID else model_type)
+
     # Interactive questions and answers
     while True:
         query = input("\nEnter a query: ")

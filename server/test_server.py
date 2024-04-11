@@ -3,15 +3,16 @@ import json
 
 request = {
     "model": "llama2-7b-chat",
-    "messages": [{"role": "user", "content": "<s> [INST] Hello! How are you? [/INST]"}],
-    "max_tokens": 64,
+    "prompt": ["<s> [INST] Hello! How are you? [/INST]"],
+    "max_tokens": 128,
     "temperature": 0.0,
+    "stop": ["."]
 }
 
 # Sending the PUT request
-outputs = requests.put(
-    url="http://127.0.0.1:5000/generate",
+outputs = requests.post(
+    url="http://172.18.0.2:5000/v1/completions",
     data=json.dumps(request),
     headers={"Content-Type": "application/json"},
-).json()[0]
+).json()
 print(outputs)

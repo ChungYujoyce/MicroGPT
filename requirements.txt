@@ -1,5 +1,6 @@
 # Natural Language Processing
-langchain==0.0.267
+# langchain==0.0.267
+langchain==0.1.2
 chromadb==0.4.6
 nltk
 InstructorEmbedding
@@ -34,3 +35,8 @@ streamlit
 Streamlit-extras
 
 vllm
+
+
+# server
+openai
+llama-cpp-python

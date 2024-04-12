@@ -59,8 +59,8 @@ class TritonServerGenerate(Resource):
         stop_words_list = input_request.get("stop", [])
         
         temperature = input_request.get("temperature", 1.0)
-        top_p = 0.0 if temperature == 0 else input_request.get("top_p", 1.0)
-        top_k = 1 if temperature == 0 else input_request.get("top_k", 40)
+        top_p = input_request.get("top_p", 0.95)
+        top_k = input_request.get("top_k", 40)
         
         frequency_penalty = 0.0
         repetition_penalty = 1.1
@@ -81,10 +81,15 @@ class TritonServerGenerate(Resource):
         out = self.generate(**data)
         response = {
             "choices": [
-                {"text": o} for o in out
+                {"text": o['text']} for o in out
             ],
-            "usage": {}
+            "usage": {
+                "completion_tokens": out[0]['output_length'],
+                "prompt_tokens": out[0]['input_length'],
+                "total_tokens": out[0]['input_length'] + out[0]['output_length'],
+            }
         }
+        logging.info(json.dumps(response["usage"]))
         return jsonify(response)
 
 
@@ -92,7 +97,7 @@ def parse_input(input_texts: str, tokenizer):
     batch_input_ids = [
         tokenizer.encode(
             input_text,
-            add_special_tokens=False,  # TODO: does this need to be true?
+            add_special_tokens=True,  # TODO: does this need to be true?
         )
         for input_text in input_texts
     ]
@@ -114,7 +119,11 @@ def get_output(output_ids, input_lengths, max_output_len, tokenizer, eos_token):
         if len(eos_ids) > 0:
             outputs = outputs[: eos_ids[0]]
         outputs = outputs.tolist()
-        output_texts.append(tokenizer.decode(outputs))
+        output_texts.append({
+            'text': tokenizer.decode(outputs),
+            'input_length': input_len,
+            'output_length': len(outputs),
+        })
     return output_texts
 
 
@@ -175,7 +184,8 @@ class TensorRTLLM:
     def __init__(self, model_path: str):
         self.tokenizer, self.pad_id, self.end_id = load_tokenizer(tokenizer_dir=model_path)
         self.runner = ModelRunnerCpp.from_dir(engine_dir=model_path, rank=tensorrt_llm.mpi_rank())
-
+        self.runner.max_seq_len = self.runner.max_input_len
+        
     @torch.no_grad()
     def forward(
         self,
@@ -192,7 +202,12 @@ class TensorRTLLM:
 
         stop_words_list = [stop_words_list for _ in range(len(input_texts))]
         stop_words_list = prepare_stop_words(stop_words_list, self.tokenizer)
-
+        
+        if max_output_token + max(input_lengths) > self.runner.max_seq_len:
+            logging.warning(f"Set output token size from {max_output_token} to {self.runner.max_seq_len - max(input_lengths)}")
+            max_output_token = min(max_output_token,  self.runner.max_seq_len - max(input_lengths))
+            
+            
         # TODO: return dictionary with a proper error reporting
         try:
             output_ids = self.runner.generate(

@@ -57,6 +57,8 @@ class TritonServerGenerate(Resource):
         tokens_to_generate = input_request.get("max_tokens", 64)
         random_seed = input_request.get("seed", 0)
         stop_words_list = input_request.get("stop", [])
+        if '<|eot_id|>' not in stop_words_list:
+            stop_words_list.append('<|eot_id|>')
         
         temperature = input_request.get("temperature", 1.0)
         top_p = input_request.get("top_p", 0.95)
@@ -81,7 +83,7 @@ class TritonServerGenerate(Resource):
         out = self.generate(**data)
         response = {
             "choices": [
-                {"text": o['text']} for o in out
+                {"text": o['text'].strip('<|eot_id|>')} for o in out
             ],
             "usage": {
                 "completion_tokens": out[0]['output_length'],
@@ -201,7 +203,8 @@ class TensorRTLLM:
         batch_input_ids, input_lengths = parse_input(input_texts, self.tokenizer)
 
         stop_words_list = [stop_words_list for _ in range(len(input_texts))]
-        stop_words_list = prepare_stop_words(stop_words_list, self.tokenizer)
+        stop_words_list = tensorrt_llm.runtime.to_word_list_format(stop_words_list, self.tokenizer)
+        stop_words_list = torch.Tensor(stop_words_list).to(torch.int32).to("cuda").contiguous()
         
         if max_output_token + max(input_lengths) > self.runner.max_seq_len:
             logging.warning(f"Set output token size from {max_output_token} to {self.runner.max_seq_len - max(input_lengths)}")

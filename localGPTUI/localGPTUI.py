@@ -27,12 +27,24 @@ def home_page():
             user_prompt = request.form.get("user_prompt")
             print(f"User Prompt: {user_prompt}")
 
+            import time
+            start_time = time.time()
+
+
+            main_prompt_url = f"{API_HOST}/prompt_route"
+            response = requests.post(main_prompt_url, data={"user_prompt": user_prompt})
+
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"elapsed_time：{elapsed_time} seconds")
+
             main_prompt_url = f"{API_HOST}/prompt_route"
             response = requests.post(main_prompt_url, data={"user_prompt": user_prompt})
             print(response)
             if response.status_code == 200:
                 # print(response.json())  # Print the JSON data from the response
-                return render_template("home.html", show_response_modal=True, response_dict=response.json())
+                return render_template("home.html", show_response_modal=True, response_time=round(elapsed_time, 3), response_dict=response.json())
         elif "documents" in request.files:
             if request.form.get("action") == "reset":
                 delete_source_url = f"{API_HOST}/delete_source"  # URL of the /api/delete_source endpoint
@@ -86,7 +98,7 @@ def home_page():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=3111, help="Port to run the UI on. Defaults to 5111.")
+    parser.add_argument("--port", type=int, default=4101, help="Port to run the UI on. Defaults to 5111.")
     parser.add_argument(
         "--host",
         type=str,

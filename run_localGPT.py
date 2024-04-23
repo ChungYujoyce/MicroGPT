@@ -172,14 +172,11 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama3")
     
     # get the prompt template and memory if set by the user.
     prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)
-    # prompt = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n" \
-    #                         + system_prompt + "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n" \
-    #                         + """{question}<|eot_id|>""" + "<|start_header_id|>assistant<|end_header_id|>\n\n"
 
     # load the llm pipeline
     llm = VLLMOpenAI(
         openai_api_key="EMPTY",
-        openai_api_base="http://172.18.0.2:5000/v1",
+        openai_api_base="http://172.17.0.7:5000/v1",
         model_name="test",
         max_tokens=512,
         temperature=0,

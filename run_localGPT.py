@@ -43,7 +43,16 @@ from constants import (
 )
 
 
-
+system_prompt = """As a helpful assistant, you will utilize the provided document to answer user questions. 
+Read the given document before providing answers and think step by step. 
+The document has an order of paragraphs with a higher correlation to the questions from the top to the bottom. 
+The answer may be hidden in the tables, so please find it as closely as possible. 
+Do not use any other information to answer the user. Provide a detailed answer to the question.
+Also, please provide the answer in the following order of priorities if applicable:
+Firstly, emphasize GPU characteristics and GPU products.
+Secondly, Give prominence to power-related specifications such as fan cooling or liquid cooling, power consumption, and so on.
+Thirdly, If applicable, mention green computing.
+Remember, please don't provide any fabricated information, ensuring that everything stated is accurate and true."""
 
 def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
     """
@@ -66,57 +75,57 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
     logging.info(f"Loading Model: {model_id}, on: {device_type}")
     logging.info("This action can take a few minutes!")
 
-    if model_basename is not None:
-        if ".gguf" in model_basename.lower():
-            llm = load_quantized_model_gguf_ggml(model_id, model_basename, device_type, LOGGING)
-            return llm
-        elif ".ggml" in model_basename.lower():
-            model, tokenizer = load_quantized_model_gguf_ggml(model_id, model_basename, device_type, LOGGING)
-        elif ".awq" in model_basename.lower():
-            model, tokenizer = load_quantized_model_awq(model_id, LOGGING)
-        else:
-            model, tokenizer = load_quantized_model_qptq(model_id, model_basename, device_type, LOGGING)
-    else:
-        model, tokenizer = load_full_model(model_id, model_basename, device_type, LOGGING)
+    # if model_basename is not None:
+    #     if ".gguf" in model_basename.lower():
+    #         llm = load_quantized_model_gguf_ggml(model_id, model_basename, device_type, LOGGING)
+    #         return llm
+    #     elif ".ggml" in model_basename.lower():
+    #         model, tokenizer = load_quantized_model_gguf_ggml(model_id, model_basename, device_type, LOGGING)
+    #     elif ".awq" in model_basename.lower():
+    #         model, tokenizer = load_quantized_model_awq(model_id, LOGGING)
+    #     else:
+    #         model, tokenizer = load_quantized_model_qptq(model_id, model_basename, device_type, LOGGING)
+    # else:
+    #     model, tokenizer = load_full_model(model_id, model_basename, device_type, LOGGING)
 
-    # Load configuration from the model to avoid warnings
-    generation_config = GenerationConfig.from_pretrained(model_id)
+    # # Load configuration from the model to avoid warnings
+    # generation_config = GenerationConfig.from_pretrained(model_id)
     # see here for details:
     # https://huggingface.co/docs/transformers/
     # main_classes/text_generation#transformers.GenerationConfig.from_pretrained.returns
 
     # Create a pipeline for text generation
-    pipe = pipeline(
-        "text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        max_tokens=MAX_NEW_TOKENS,
-        # do_sample=False,
-        temperature=0.0,
-        # top_p=0.0,
-        # top_k=1,
-        # repetition_penalty=1.15,
-        generation_config=generation_config,
-    )
+    # pipe = pipeline(
+    #     "text-generation",
+    #     model=model,
+    #     tokenizer=tokenizer,
+    #     max_tokens=MAX_NEW_TOKENS,
+    #     # do_sample=False,
+    #     temperature=0.0,
+    #     # top_p=0.0,
+    #     # top_k=1,
+    #     # repetition_penalty=1.15,
+    #     generation_config=generation_config,
+    # )
 
-    local_llm = HuggingFacePipeline(pipeline=pipe)
+    # local_llm = HuggingFacePipeline(pipeline=pipe)
     logging.info("Local LLM Loaded")
 
-    # local_llm = VLLMOpenAI(
-    #     openai_api_key="EMPTY",
-    #     openai_api_base="http://172.18.0.2:5000/v1",
-    #     model_name="test",
-    #     max_tokens=512,
-    #     temperature=0,
-    #     model_kwargs={
-    #         "stop": [],
-    #     },
-    # )
+    local_llm = VLLMOpenAI(
+        openai_api_key="EMPTY",
+        openai_api_base="http://172.17.0.7:5000/v1",
+        model_name="test",
+        max_tokens=512,
+        temperature=0,
+        model_kwargs={
+            "stop": [],
+        },
+    )
 
     return local_llm
 
 
-def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
+def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama3"):
     """
     Initializes and returns a retrieval-based Question Answering (QA) pipeline.
 
@@ -162,12 +171,23 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
     retriever_bm25 = BM25Retriever.from_documents(documents=documents, preprocess_func=clean_text, k=k)
     
     # get the prompt template and memory if set by the user.
-    prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)
+    # prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)
+    prompt = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n" \
+                            + system_prompt + "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n" \
+                            + """{question}<|eot_id|>""" + "<|start_header_id|>assistant<|end_header_id|>\n\n"
 
     # load the llm pipeline
-    llm = load_model(device_type, model_id=MODEL_ID, model_basename=MODEL_BASENAME, LOGGING=logging)
-    import pdb
-    pdb.set_trace()
+    llm = VLLMOpenAI(
+        openai_api_key="EMPTY",
+        openai_api_base="http://172.17.0.7:5000/v1",
+        model_name="test",
+        max_tokens=512,
+        temperature=0,
+        model_kwargs={
+            "stop": [],
+        },
+    )
+
     if use_history:
         qa = RetrievalQA.from_chain_type(
             llm=llm,
@@ -183,7 +203,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
             llm=llm,
             chain_type="stuff",  # try other chains types as well. refine, map_reduce, map_rerank
             retriever=retriever,
-            # retriever_bm25=retriever_bm25,
+            retriever_bm25=retriever_bm25,
             return_source_documents=True,  # verbose=True,
             callbacks=callback_manager,
             chain_type_kwargs={
@@ -238,9 +258,9 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
 )
 @click.option(
     "--model_type",
-    default="llama",
+    default="llama3",
     type=click.Choice(
-        ["llama", "mistral", "non_llama"],
+        ["llama", "llama3", "mistral", "non_llama"],
     ),
     help="model type, llama, mistral or non_llama",
 )
@@ -278,7 +298,8 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
     if not os.path.exists(MODELS_PATH):
         os.mkdir(MODELS_PATH)
 
-    qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type='mistral' if 'mistralai' in MODEL_ID else model_type)
+    # qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type='mistral' if 'mistralai' in MODEL_ID else model_type)
+    qa = retrieval_qa_pipline(device_type, use_history)
 
     # Interactive questions and answers
     while True:

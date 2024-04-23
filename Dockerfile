@@ -11,7 +11,7 @@ RUN pip install --upgrade pip \
   && pip install git+https://github.com/NVIDIA/TransformerEngine.git@stable
   
 
-RUN git clone --branch add-bm25 https://github.com/ChungYujoyce/langchain.git \
+RUN git clone --branch add-bm25-on-v0.1.2 https://github.com/ChungYujoyce/langchain.git \
     && cd langchain/libs/langchain \
     && pip install -e .
     

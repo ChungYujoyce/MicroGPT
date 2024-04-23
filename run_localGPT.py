@@ -113,7 +113,7 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
 
     local_llm = VLLMOpenAI(
         openai_api_key="EMPTY",
-        openai_api_base="http://172.17.0.7:5000/v1",
+        openai_api_base="http://172.18.0.2:5000/v1",
         model_name="test",
         max_tokens=512,
         temperature=0,
@@ -171,15 +171,15 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama3")
     retriever_bm25 = BM25Retriever.from_documents(documents=documents, preprocess_func=clean_text, k=k)
     
     # get the prompt template and memory if set by the user.
-    # prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)
-    prompt = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n" \
-                            + system_prompt + "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n" \
-                            + """{question}<|eot_id|>""" + "<|start_header_id|>assistant<|end_header_id|>\n\n"
+    prompt, memory = get_prompt_template(promptTemplate_type=promptTemplate_type, history=use_history)
+    # prompt = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n" \
+    #                         + system_prompt + "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n" \
+    #                         + """{question}<|eot_id|>""" + "<|start_header_id|>assistant<|end_header_id|>\n\n"
 
     # load the llm pipeline
     llm = VLLMOpenAI(
         openai_api_key="EMPTY",
-        openai_api_base="http://172.17.0.7:5000/v1",
+        openai_api_base="http://172.18.0.2:5000/v1",
         model_name="test",
         max_tokens=512,
         temperature=0,
@@ -299,7 +299,7 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
         os.mkdir(MODELS_PATH)
 
     # qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type='mistral' if 'mistralai' in MODEL_ID else model_type)
-    qa = retrieval_qa_pipline(device_type, use_history)
+    qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama3")
 
     # Interactive questions and answers
     while True:

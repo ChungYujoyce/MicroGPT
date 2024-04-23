@@ -41,18 +41,11 @@ def get_prompt_template(system_prompt=system_prompt, promptTemplate_type=None, h
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
 
     elif promptTemplate_type == "llama3":
-        if history:
-            instruction = """
-            Context: {history} \n {context}
-            User: {question}"""
-
-            prompt_template = B_INST + SYSTEM_PROMPT + instruction + E_INST
-            prompt = PromptTemplate(input_variables=["history", "context", "question"], template=prompt_template)
-        else:
-
+            instruction = """Context: {context}
+User: {question}"""
             prompt_template = "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n" \
                             + system_prompt + "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n" \
-                            + """{question}<|eot_id|>""" + "<|start_header_id|>assistant<|end_header_id|>\n\n"
+                            + instruction + "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 
             prompt = PromptTemplate(input_variables=["context", "question"], template=prompt_template)
 

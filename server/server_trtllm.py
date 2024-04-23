@@ -65,7 +65,7 @@ class TritonServerGenerate(Resource):
         top_k = input_request.get("top_k", 40)
         
         frequency_penalty = 0.0
-        repetition_penalty = 1.1
+        repetition_penalty = 1.2
         
         data = dict(
             prompts=prompts,
@@ -201,10 +201,12 @@ class TensorRTLLM:
         stop_words_list,
     ):
         batch_input_ids, input_lengths = parse_input(input_texts, self.tokenizer)
-
-        stop_words_list = [stop_words_list for _ in range(len(input_texts))]
-        stop_words_list = tensorrt_llm.runtime.to_word_list_format(stop_words_list, self.tokenizer)
-        stop_words_list = torch.Tensor(stop_words_list).to(torch.int32).to("cuda").contiguous()
+        if len(stop_words_list) > 0:
+            stop_words_list = [stop_words_list for _ in range(len(input_texts))]
+            stop_words_list = tensorrt_llm.runtime.to_word_list_format(stop_words_list, self.tokenizer)
+            stop_words_list = torch.Tensor(stop_words_list).to(torch.int32).to("cuda").contiguous()
+        else:
+            stop_words_list = None
         
         if max_output_token + max(input_lengths) > self.runner.max_seq_len:
             logging.warning(f"Set output token size from {max_output_token} to {self.runner.max_seq_len - max(input_lengths)}")

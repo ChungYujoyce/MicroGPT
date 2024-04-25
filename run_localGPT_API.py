@@ -8,6 +8,7 @@ import torch
 from flask import Flask, jsonify, request, render_template
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceInstructEmbeddings
+from langchain_community.llms import VLLMOpenAI
 
 # from langchain.embeddings import HuggingFaceEmbeddings
 from run_localGPT import load_model
@@ -65,7 +66,17 @@ EMBEDDINGS = HuggingFaceInstructEmbeddings(model_name=EMBEDDING_MODEL_NAME, mode
 #     )
 
 # load the vectorstore
-LLM = load_model(device_type=DEVICE_TYPE, model_id=MODEL_ID, model_basename=MODEL_BASENAME)
+LLM = VLLMOpenAI(
+        openai_api_key="EMPTY",
+        openai_api_base="http://172.17.0.7:5000/v1",
+        model_name="test",
+        max_tokens=512,
+        temperature=0,
+        model_kwargs={
+            "stop": [],
+        },
+    )
+
 DB = None
 RETRIEVER = None
 RETRIEVER_BM25 = None
@@ -97,7 +108,7 @@ def load_DB():
     documents = [Document(page_content=c, metadata=m) for m, c in zip(collections['metadatas'], collections['documents'])]
     RETRIEVER_BM25 = BM25Retriever.from_documents(documents=documents, preprocess_func=clean_text, k=k)
     
-    prompt, memory = get_prompt_template(promptTemplate_type="llama", history=False)
+    prompt, memory = get_prompt_template(promptTemplate_type="llama3", history=False)
 
     QA = RetrievalQA.from_chain_type(
         llm=LLM,
